@@ -1,0 +1,67 @@
+{
+  "name": "cucumber-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "homepage": "./",
+  "dependencies": {
+    "@cucumber/tag-expressions": "^4.1.0",
+    "@emotion/react": "^11.7.1",
+    "@emotion/styled": "^11.6.0",
+    "@fontsource/roboto": "^4.5.2",
+    "@mui/icons-material": "^5.2.5",
+    "@mui/material": "^5.2.5",
+    "@mui/styles": "^5.3.0",
+    "@reduxjs/toolkit": "^1.4.0",
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.3.2",
+    "@testing-library/user-event": "^7.1.2",
+    "dayjs": "^1.10.7",
+    "fast-memoize": "^2.5.2",
+    "font-awesome": "^4.7.0",
+    "lodash.memoize": "^4.1.2",
+    "moment": "^2.27.0",
+    "ncp": "^2.0.0",
+    "pretty-data": "^0.40.0",
+    "react": "^17.0.2",
+    "react-copy-to-clipboard": "^5.0.4",
+    "react-dom": "^17.0.2",
+    "react-json-view": "^1.21.3",
+    "react-masonry-css": "^1.0.16",
+    "react-minimal-pie-chart": "^8.2.0",
+    "react-redux": "^7.2.6",
+    "react-scripts": "3.4.1",
+    "react-select": "^5.2.1",
+    "react-xml-viewer": "^1.3.0",
+    "recursive-readdir": "^2.2.2",
+    "redux": "^4.0.5",
+    "redux-query-sync": "^0.1.10",
+    "redux-thunk": "^2.3.0",
+    "renamer": "^4.0.0",
+    "replace-in-file": "^6.3.2"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "prebuild": "rm -rf build",
+    "build": "react-scripts build",
+    "preinstall": "rm -rf dist",
+    "install": "npm run build && node prepDist.mjs",
+    "postinstall": "node install.mjs",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
