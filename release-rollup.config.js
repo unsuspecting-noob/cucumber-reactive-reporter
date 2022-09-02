@@ -5,7 +5,7 @@ import pkg from './package.json';
 export default [
 	{
 		input: 'index.mjs',
-		external: ['ncp'],
+		external: ['ncp', 'fs', 'path', 'util'],
 		output: [{
 			file: pkg.main,
 			format: 'cjs'

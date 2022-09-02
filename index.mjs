@@ -1,5 +1,5 @@
-import fs from "fs";
 // import { createRequire } from 'module';
+import fs from "fs";
 import ncp from "ncp";
 import path from "path";
 import ut from "util";
@@ -89,7 +89,8 @@ const generate = async (source, dest, options) => {
     //validate input json and make a copy
     let str = fs.readFileSync(source).toString();
     let obj = JSON.parse(str);
-    let out = JSON.stringify(obj);
+    let out = _prepDataForStore(obj);
+    let modifiedJSON = JSON.stringify(out);
     let destExists = true;
     try {
         fs.accessSync(dest);
@@ -99,7 +100,7 @@ const generate = async (source, dest, options) => {
     if (!destExists) {
         fs.mkdirSync(dest, { recursive: true });
     }
-    fs.writeFileSync(path.join(dest, CUCUMBER_JSON_PATH), out);
+    fs.writeFileSync(path.join(dest, CUCUMBER_JSON_PATH), modifiedJSON);
     fs.writeFileSync(path.join(dest, SETTINGS_JSON_PATH), JSON.stringify(options));
 
     await cp(HTML_PATH, dest);
@@ -110,6 +111,181 @@ const generate = async (source, dest, options) => {
     fs.writeFileSync(indexPagePath, modified, "utf8");
     console.log("done")
 
+}
+
+let _prepDataForStore = (data) => {
+    let state = {};
+    state.features = {};
+    state.features.list = [];
+    state.features.featuresMap = {};
+    state.scenarios = {};
+    state.scenarios.list = [];
+    state.scenarios.scenariosMap = {};
+    state.steps = {};
+    state.steps.stepsMap = {};
+    state.steps.totalDurationNanoSec = 0;
+    //parse
+    let featureIndex = 0;
+    console.time("loadTotal")
+    for (let f of data) {
+        //FEATURE
+        //cucumber id field is not guaranteed to be unique for feature/scenario/step
+        f.id = `${featureIndex++}_${f.id}`;
+        _processFeature(state, f);
+
+        //SCENARIO
+        let numScenarios = f.elements.length; //avoid multiple lookups;
+        if (f.elements && numScenarios) {
+            let sc_index = 0;
+            for (let sc of f.elements) {
+                //need to make scenario id unique as well
+                sc_index++;
+                let sc_id_arr = sc.id.split(";");
+                sc_id_arr[0] = f.id;
+                if (sc_id_arr.length) {
+                    sc_id_arr[1] = `${sc_index - 1}_${sc_id_arr[1]}`;
+                }
+                sc.id = sc_id_arr.join(";");
+                _processScenario(state, f.id, sc)
+                //STEPS
+                for (let st of sc.steps) {
+                    _processStep(state, sc.id, st)
+                }
+            }
+        }
+    }
+    console.timeEnd("loadTotal")
+    return state;
+}
+
+let _processFeature = (state, f) => {
+    const {
+        description,
+        elements,
+        id,
+        keyword,
+        line,
+        name,
+        tags: [...tags],
+        uri
+    } = f;
+    const allTags = [...tags];
+    //figure out if it has failed stuff
+    let numFailedScenarios = 0;
+    let numSkippedScenarios = 0;
+    if (elements && elements.length) {
+        for (let el of elements) {
+            //collect scenario tags
+            if (el.tags && el.tags.length) {
+                let temp = allTags.map(t => t.name);
+                el.tags.forEach((tag) => {
+                    if (temp.includes(tag.name) === false) {
+                        allTags.push(tag);
+                    }
+                });
+            }
+            if (el.steps && el.steps.length) {
+                for (let step of el.steps) {
+                    if (step.result && step.result.status === "failed") {
+                        numFailedScenarios++;
+                        break;
+                    }
+                    if (step.result && step.result.status === "skipped") {
+                        numSkippedScenarios++;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    state.features.list.push(id);
+    state.features.featuresMap[id] = {
+        id,
+        description,
+        uri,
+        keyword,
+        name,
+        line,
+        tags,
+        allTags,
+        numFailedScenarios,
+        numSkippedScenarios
+    };
+}
+
+let _processScenario = (state, featureId, scenario) => {
+    const {
+        id,
+        keyword,
+        line,
+        name,
+        tags: [...tags],
+        type,
+        uri
+    } = scenario;
+
+    state.scenarios.list.push(id);
+    state.scenarios.scenariosMap[id] = {
+        failedSteps: 0,
+        featureId,
+        id,
+        keyword,
+        line,
+        name,
+        passedSteps: 0,
+        skippedSteps: 0,
+        tags,
+        type,
+        uri
+    };
+}
+
+let _processStep = (state, scenarioId, st) => {
+    const {
+        arguments: args,
+        embeddings,
+        hidden,
+        keyword,
+        line,
+        match: {
+            location
+        },
+        name,
+        result: {
+            duration,
+            error_message,
+            status
+        }
+    } = st;
+
+    let step = {
+        args,
+        duration,
+        embeddings,
+        error_message,
+        keyword,
+        line,
+        location,
+        name,
+        status
+    };
+    if (!state.steps.stepsMap[scenarioId])
+        state.steps.stepsMap[scenarioId] = { steps: [] };
+    state.steps.stepsMap[scenarioId].steps.push(step);
+    if (isNaN(duration) === false) {
+        state.steps.totalDurationNanoSec = state.steps.totalDurationNanoSec + duration;
+    }
+
+    if (!hidden || (embeddings && embeddings.length)) {
+        if (status === "passed") {
+            state.scenarios.scenariosMap[scenarioId].passedSteps++;
+        } else if (status === "skipped") {
+            state.scenarios.scenariosMap[scenarioId].skippedSteps++;
+        }
+    }
+    if (status === "failed") {
+        state.scenarios.scenariosMap[scenarioId].failedSteps++;
+    }
 }
 
 export default {

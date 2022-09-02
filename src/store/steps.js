@@ -51,11 +51,11 @@ let slice = createSlice({
 
 //SELECTORS
 export const getStepsByScenarioId = (state, { id }) => {
-  return state.entities.steps.stepsMap[id].steps;
+  return state.steps.stepsMap[id].steps;
 };
 
 export const getStepsNoBoilerByScenarioId = createSelector([
-  (state) => state.entities.steps.stepsMap,
+  (state) => state.steps.stepsMap,
   (state, { id }) => id
 ], (stepsMap, id) => {
   return stepsMap[id].steps.filter((s) => { if (s.keyword === "Before" || s.keyword === "After") { return false; } else return true; });
@@ -68,12 +68,12 @@ export const getPassedStepsNoBoilerByScenarioId = createSelector([
 });
 
 export const getTotalDurationNanoSec = (state) => {
-  return state.entities.steps.totalDurationNanoSec;
+  return state.steps.totalDurationNanoSec;
 };
 
 
 export const getFailedStepsByScenarioId = createSelector([
-  (state) => state.entities.steps.stepsMap,
+  (state) => state.steps.stepsMap,
   (state, { id }) => id
 ], (stepsMap, id) => {
   let l = stepsMap[id].steps;
@@ -81,7 +81,7 @@ export const getFailedStepsByScenarioId = createSelector([
   return f;
 });
 export const getPassedStepsByScenarioId = createSelector([
-  (state) => state.entities.steps.stepsMap,
+  (state) => state.steps.stepsMap,
   (state, { id }) => id
 ], (stepsMap, id) => {
   let l = stepsMap[id].steps;
@@ -90,7 +90,7 @@ export const getPassedStepsByScenarioId = createSelector([
 });
 
 export const getSkippedStepsByScenarioId = createSelector([
-  (state) => state.entities.steps.stepsMap,
+  (state) => state.steps.stepsMap,
   (state, { id }) => id
 ], (stepsMap, id) => {
   let l = stepsMap[id].steps;

@@ -82,12 +82,12 @@ const _filterScenarios = (searchString, scenarios) => {
 
 //SELECTORS
 export const getScenarioById = (state, { id }) => {
-  return state.entities.scenarios.scenariosMap[id];
+  return state.scenarios.scenariosMap[id];
 };
 
 export const getAllScenariosForFeature = createSelector(
   [
-    state => Object.values(state.entities.scenarios.scenariosMap),
+    state => Object.values(state.scenarios.scenariosMap),
     (state, { id }) => id
   ],
   (scenarios, featureId) => {
@@ -101,7 +101,7 @@ export const getAllScenariosForFeature = createSelector(
 
 const _getAllScenariosForFeatureWithState = createSelector(
   [
-    state => Object.values(state.entities.scenarios.scenariosMap),
+    state => Object.values(state.scenarios.scenariosMap),
     (state, { id }) => id,
     state => getFeaturesToggleValue(state)
   ],
@@ -137,7 +137,7 @@ export const getAllScenariosForFeatureWithState = createSelector([getLastEntered
 
 const _getScenariosForAListOfFeaturesUnfiltered = createSelector(
   [
-    state => Object.values(state.entities.scenarios.scenariosMap),
+    state => Object.values(state.scenarios.scenariosMap),
     (state, { list }) => list
   ], (scenarios, featureIds) => {
     let ret = [];
@@ -151,7 +151,7 @@ const _getScenariosForAListOfFeaturesUnfiltered = createSelector(
 export const getScenariosForAListOfFeatures = createSelector([getLastEnteredSearchValue, _getScenariosForAListOfFeaturesUnfiltered], _filterScenarios);
 
 export const getAllScenarios = (state) => {
-  return state.entities.scenarios.list;
+  return state.scenarios.list;
 }
 
 export default slice.reducer;

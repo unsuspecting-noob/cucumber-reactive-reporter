@@ -18,11 +18,15 @@ let slice = createSlice({
       featuresButtonToggleValue: FeaturesToggleValuesEnum.ALL,
       lastEnteredSearchValue: "",
       loading: true,
+      featureLoadProgress: 0,
+      finishedLoadingData: false,
       searchHistory: [],
       showBoiler: true,
       tagsDisplay: false,
       metadataDisplay: false
     },
+    scenarioContainers: {},
+    paginators: {}
   },
   reducers: {
     loadFeaturesStarted: (states, action) => {
@@ -74,6 +78,45 @@ let slice = createSlice({
     loadFeaturesFinished: (states, action) => {
       states.featuresList.loading = false;
     },
+    loadDataFinished: (states, action) => {
+      states.featuresList.finishedLoadingData = true;
+    },
+    featureLoadProgressChanged: (states, action) => {
+      states.featuresList.featureLoadProgress = action.payload;
+    },
+    scenarioContainerClicked: (states, action) => {
+      const {
+        id
+      } = action.payload;
+      if (!states.scenarioContainers[id]) {
+        states.scenarioContainers[id] = {};
+        states.scenarioContainers[id].collapsed = true;
+      }
+      states.scenarioContainers[id].collapsed = !states.scenarioContainers[id].collapsed;
+    },
+    paginatorChange: (states, action) => {
+      const {
+        id,
+        page,
+        pStart,
+        pEnd,
+        pSize,
+        searchVal
+      } = action.payload;
+      if (!states.paginators[id]) {
+        states.paginators[id] = {};
+        states.paginators[id].page = 1;
+        states.paginators[id].pSize = 5;
+        states.paginators[id].pStart = 0;
+        states.paginators[id].pEnd = 5;
+        states.paginators[id].searchVal = null;
+      }
+      states.paginators[id].pSize = pSize;
+      states.paginators[id].pStart = pStart;
+      states.paginators[id].pEnd = pEnd;
+      states.paginators[id].page = page;
+      states.paginators[id].searchVal = searchVal;
+    },
     toggleTheme: (states, action) => {
       states.theme = states.theme === "dark" ? "light" : "dark";
     },
@@ -85,38 +128,56 @@ let slice = createSlice({
 
 //SELECTORS
 export const getFeaturesLoading = (state) => {
-  return state.entities.states.featuresList.loading;
+  return state.states.featuresList.loading;
+};
+
+export const getFeatureLoadProgress = (state) => {
+  return state.states.featuresList.featureLoadProgress;
+};
+
+export const getDataLoadingFinished = (state) => {
+  return state.states.featuresList.finishedLoadingData;
+};
+
+export const getScenarioContainerCollapsed = (state, props) => {
+  const { id } = props;
+  return state.states.scenarioContainers[id]?.collapsed;
+};
+
+export const getPaginatorInfo = (state, props) => {
+  const { id } = props;
+  return state.states.paginators[id];
 };
 
 export const getSettings = (state) => {
-  return state.entities.states.external_settings;
+  return state.states.external_settings;
 };
 
 export const getTheme = (state) => {
-  return state.entities.states.theme;
+  return state.states.theme;
 };
 
 export const getBoiler = (state) => {
-  return state.entities.states.featuresList.showBoiler;
+  return state.states.featuresList.showBoiler;
 };
 
 export const getFeaturesToggleValue = (state) => {
-  return state.entities.states.featuresList.featuresButtonToggleValue;
+  return state.states.featuresList.featuresButtonToggleValue;
 };
 
 export const getTagsDisplayButtonState = (state) => {
-  return state.entities.states.featuresList.tagsDisplay;
+  return state.states.featuresList.tagsDisplay;
 };
 
 export const getMetadataDisplayButtonState = (state) => {
-  return state.entities.states.featuresList.metadataDisplay;
+  return state.states.featuresList.metadataDisplay;
 };
 
-export const getFilterHistory = createSelector((state) => state.entities.states.featuresList,
+export const getFilterHistory = createSelector((state) => state.states.featuresList,
   (states) => [...states.searchHistory]);
 
 export const getLastEnteredSearchValue = (state) => {
-  return state.entities.states.featuresList.lastEnteredSearchValue;
+  return state.states.featuresList.lastEnteredSearchValue;
 }
 
 export default slice.reducer;
@@ -124,10 +185,14 @@ export const {
   displayTagsHelpButtonClicked,
   displayMetadataButtonClicked,
   featuresToggleClicked,
+  featureLoadProgressChanged,
   filterByTags,
   loadFeaturesStarted,
   loadFeaturesFinished,
+  loadDataFinished,
+  paginatorChange,
+  scenarioContainerClicked,
+  settingsLoaded,
   toggleBoiler,
-  toggleTheme,
-  settingsLoaded
+  toggleTheme
 } = slice.actions;

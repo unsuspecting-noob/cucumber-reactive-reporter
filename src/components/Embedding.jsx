@@ -1,25 +1,21 @@
 import '../overwriteStyles.css'
 
-import { Box, Fab, Paper, Table, TableBody, TableCell, TableContainer, TableRow, TextareaAutosize } from "@mui/material";
-import React, { useState } from "react";
-import { commonCellStyle, commonTextStyle } from './styles/commonStyles';
+import { Box, Fab, Paper, Table, TableBody, TableCell, TableContainer, TableRow } from "@mui/material";
 import { makeStyles, useTheme } from '@mui/styles';
 
 import ContentCopy from '@mui/icons-material/ContentCopy';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
-import ReactJson from 'react-json-view';
-import XMLViewer from 'react-xml-viewer'
+import React from "react";
+import TextArea from './TextArea';
 import { blueGrey } from '@mui/material/colors';
 import clsx from 'clsx';
-import { pd } from "pretty-data";
+import { commonCellStyle } from './styles/commonStyles';
 
 const Embedding = (props) => {
     const data = props.content;
     const themeName = props.themeName;
-    const maxXMLchars = 80;
-
     let theme = useTheme();
-    // console.dir(theme.palette);
+
     document.documentElement.style.setProperty("--textCol", blueGrey[themeName === "dark" ? 200 : 800]);
     document.documentElement.style.setProperty("--scrollBarCol", theme.palette.background.paper);
     document.documentElement.style.setProperty("--scrollBarThumbCol", blueGrey[300]);
@@ -41,29 +37,7 @@ const Embedding = (props) => {
         }
     });
 
-    const [collapse, setCollapse] = useState(false); //store state locally, should think about moving it into redux store
-    const [drag, setDrag] = useState(false); //store state locally, should think about moving it into redux store
-    const handleClick = () => {
-        if (!drag) collapse ? setCollapse(false) : setCollapse(true);
-    };
-    const onMouseDown = () => {
-        setDrag(false);
-    };
-    const onMouseMove = () => {
-        setDrag(true);
-    };
-
     const classes = useStyles();
-    const customThemeXML = {
-        overflowBreak: true,
-        separatorColor: "#EAECEE",
-        attributeValueColor: "#c7c795",
-        attributeKeyColor: "#008000",
-        textColor: "#a9ab95"
-    }
-
-
-
     let renderOne = (item, c) => {
         let value = item.media ? item.media : item.data;
         let _mime = item.mime_type ? item.mime_type : item.media?.type;
@@ -88,45 +62,13 @@ const Embedding = (props) => {
                 )
             case "text/xml":
             case "application/xml":
-                let preview;
-                let formatted = pd.xml(value);
-                if (formatted.length > maxXMLchars) {
-                    if (!collapse) preview = formatted.substring(0, maxXMLchars - 1) + " ... click for more";
-                }
-                if (!preview) {
-                    return (
-                        <TableRow key={c} hover className={classes.root}>
-                            <TableCell align="center" style={{ ...commonCellStyle }}>
-                                <div style={{ ...commonTextStyle, width: "stretch" }}>
-                                    <XMLViewer
-                                        xml={value}
-                                        indentSize={3}
-                                        theme={themeName === "dark" ? customThemeXML : {}}
-                                        collapsible={false}
-                                        onMouseUp={handleClick}
-                                        onMouseDown={onMouseDown}
-                                        onMouseMove={onMouseMove}
-                                    />
-                                </div>
-                            </TableCell>
-                            <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
-                                <CopyToClipboard text={value}>
-                                    <Fab color="primary" aria-label="copy to clipboard" size="small">
-                                        <ContentCopy />
-                                    </Fab>
-                                </CopyToClipboard>
-                            </TableCell>
-                        </TableRow>
-                    )
-                } else return (
+                return (
                     <TableRow key={c} hover className={classes.root}>
                         <TableCell align="center" style={{ ...commonCellStyle }}>
-                            <TextareaAutosize
-                                maxRows={30}
-                                readOnly
-                                style={{ ...commonTextStyle }}
-                                defaultValue={preview}
-                                onClick={handleClick} />
+                            <TextArea
+                                content={value}
+                                type="xml"
+                            />
                         </TableCell>
                         <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
                             <CopyToClipboard text={value}>
@@ -150,20 +92,9 @@ const Embedding = (props) => {
                 return (
                     <TableRow key={c} hover className={classes.root}>
                         <TableCell align="center" style={{ ...commonCellStyle }}>
-                            <ReactJson
-                                src={obj}
-                                theme={themeName == "dark" ? "ashes" : "apathy:inverted"}
-                                style={{
-                                    whiteSpace: "pre-wrap",
-                                    wordBreak: "break-all",
-                                    textAlign: "left",
-                                    backgroundColor: themeName === "dark" ? null : "#e9е9е9"
-                                }}
-                                name={false}
-                                displayDataTypes={false}
-                                collapseStringsAfterLength={100}
-                                indentWidth={2}
-                                collapsed={1}
+                            <TextArea
+                                content={value}
+                                type="json"
                             />
                         </TableCell>
                         <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
@@ -176,17 +107,30 @@ const Embedding = (props) => {
                     </TableRow>
                 )
             case "image/png":
-                return null;
+                return (
+                    <TableRow key={c} hover className={classes.root}>
+                        <TableCell align="center" style={{ ...commonCellStyle }}>
+                            {value ? <img src={`data:image/png;base64,${value}`}
+                                alt=""
+                                style={{
+                                    maxWidth: "100%",
+                                    objectFit: "scale-down"
+                                }}
+                            /> : ''}
+                        </TableCell>
+                        <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
+
+                        </TableCell>
+                    </TableRow>
+                );
             case "text/plain":
             default:
                 return (
                     <TableRow key={c} hover className={classes.root}>
                         <TableCell align="center" style={{ ...commonCellStyle }}>
-                            <TextareaAutosize
-                                maxRows={30}
-                                readOnly
-                                style={{ ...commonTextStyle }}
-                                defaultValue={value} />
+                            <TextArea
+                                content={value}
+                            />
                         </TableCell>
                         <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
                             <CopyToClipboard text={value}>
@@ -204,7 +148,7 @@ const Embedding = (props) => {
     return (
         <Box display="flex">
             <TableContainer component={Paper} style={{ marginBottom: "10px", marginTop: "10px" }}>
-                <Table size="small" className={classes.table} >
+                <Table size="small" className={classes.table}>
                     <TableBody>
                         {data.map((item) => renderOne(item, count++))}
                     </TableBody>

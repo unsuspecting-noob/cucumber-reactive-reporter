@@ -3,14 +3,23 @@ import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableRow } fro
 import React from "react";
 import Typography from '@mui/material/Typography';
 import { commonTextStyle } from "./styles/commonStyles";
+import { styled } from '@mui/material/styles';
 
 const AttachmentTable = (props) => {
     const { content } = props;
+    const Item = styled(Paper)(({ theme }) => ({
+        ...theme.typography.body2,
+        textAlign: 'center',
+        color: theme.palette.text.secondary,
+        minWidth: "100%",
+        border: "2px solid",
+        borderColor: theme.palette.divider
+    }));
     let i = 0;
     let j = 0;
     return (
         <Box sx={{}}>
-            <TableContainer component={Paper}>
+            <TableContainer component={Item}>
                 <Table size="small">
                     <TableBody>
                         {content.rows.map((row) => (

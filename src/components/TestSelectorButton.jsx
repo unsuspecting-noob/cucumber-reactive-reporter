@@ -86,6 +86,7 @@ const TestSelectorButton = (props) => {
                 anchorEl={anchorRef.current}
                 role={undefined}
                 transition
+                sx={{ zIndex: 1300 }}
             >
                 {({ TransitionProps, placement }) => (
                     <Grow
@@ -95,7 +96,7 @@ const TestSelectorButton = (props) => {
                                 placement === 'bottom' ? 'center top' : 'center bottom'
                         }}
                     >
-                        <Paper>
+                        <Paper >
                             <ClickAwayListener onClickAway={handleClose}>
                                 <MenuList id="split-button-menu">
                                     {options.map((option, index) => (

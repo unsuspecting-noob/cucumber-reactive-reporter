@@ -4,12 +4,13 @@ import { getLastEnteredSearchValue } from "./uistates";
 import parseTags from '@cucumber/tag-expressions'
 
 //Reducers
-let slice = createSlice({
+const defaultState = {
+  featuresMap: {},
+  list: []
+};
+let slice = initState => createSlice({
   name: "features",
-  initialState: {
-    featuresMap: {},
-    list: []
-  },
+  initialState: initState,
   reducers: {
     featureAdded: (features, action) => {
       const {
@@ -68,20 +69,24 @@ let slice = createSlice({
   },
 });
 
+const generateSlice = initState => {
+  return slice(initState).reducer;
+}
+
 //SELECTORS
 
 export const getFeatureById = (state, { id }) => {
-  return state.entities.features.featuresMap[id];
+  return state.features.featuresMap[id];
 };
 
 export const getAllFeatures = createSelector(
-  (state) => state.entities.features.featuresMap,
+  (state) => state.features.featuresMap,
   (features) => Object.values(features)
 );
 
 
 export const getAllFailedFeatures = createSelector(
-  (state) => state.entities.features.featuresMap,
+  (state) => state.features.featuresMap,
   (features) => {
     return Object.values(features).filter((f) => {
       return f.numFailedScenarios > 0;
@@ -90,7 +95,7 @@ export const getAllFailedFeatures = createSelector(
 );
 
 export const getAllPassedFeatures = createSelector(
-  (state) => state.entities.features.featuresMap,
+  (state) => state.features.featuresMap,
   (features) => {
     //there is no numPassedScenarios, need to calc
     let sc = Object.values(features);
@@ -102,7 +107,7 @@ export const getAllPassedFeatures = createSelector(
 );
 
 export const getAllSkippedFeatures = createSelector(
-  (state) => state.entities.features.featuresMap,
+  (state) => state.features.featuresMap,
   (features) => {
     return Object.values(features).filter((f) => {
       return f.numSkippedScenarios > 0;
@@ -111,12 +116,12 @@ export const getAllSkippedFeatures = createSelector(
 );
 
 export const getTotalNumberOfFailedScenarios = createSelector(
-  (state) => state.entities,
-  (entities) => {
-    let featureList = Object.values(entities.features.featuresMap);
+  (state) => state,
+  (state) => {
+    let featureList = Object.values(state.features.featuresMap);
     let failed = featureList.reduce((total, item) => {
       let featureId = item.id;
-      let scenarios = Object.values(entities.scenarios.scenariosMap).filter(
+      let scenarios = Object.values(state.scenarios.scenariosMap).filter(
         (sc) => {
           return sc.id.startsWith(featureId) && sc.failedSteps;
         }
@@ -128,12 +133,12 @@ export const getTotalNumberOfFailedScenarios = createSelector(
 );
 
 export const getTotalNumberOfPassedScenarios = createSelector(
-  (state) => state.entities,
-  (entities) => {
-    let featureList = Object.values(entities.features.featuresMap);
+  (state) => state,
+  (state) => {
+    let featureList = Object.values(state.features.featuresMap);
     let failed = featureList.reduce((total, item) => {
       let featureId = item.id;
-      let scenarios = Object.values(entities.scenarios.scenariosMap).filter(
+      let scenarios = Object.values(state.scenarios.scenariosMap).filter(
         (sc) => {
           return (
             sc.id.startsWith(featureId) && !sc.failedSteps && sc.passedSteps && !sc.skippedSteps
@@ -147,12 +152,12 @@ export const getTotalNumberOfPassedScenarios = createSelector(
 );
 
 export const getTotalNumberOfSkippedScenarios = createSelector(
-  (state) => state.entities,
-  (entities) => {
-    let featureList = Object.values(entities.features.featuresMap);
+  (state) => state,
+  (state) => {
+    let featureList = Object.values(state.features.featuresMap);
     let failed = featureList.reduce((total, item) => {
       let featureId = item.id;
-      let scenarios = Object.values(entities.scenarios.scenariosMap).filter(
+      let scenarios = Object.values(state.scenarios.scenariosMap).filter(
         (sc) => {
           return (
             sc.id.startsWith(featureId) &&
@@ -173,7 +178,7 @@ export const getFailedScenariosByFeatureId = (
   { id: featureId }
 ) => {
   let scens = Object.values(
-    state.entities.scenarios.scenariosMap
+    state.scenarios.scenariosMap
   ).filter((sc) => {
     return sc.id.startsWith(featureId) && sc.failedSteps;
   });
@@ -187,7 +192,7 @@ export const getPassedScenariosByFeatureId = (
   { id: featureId }
 ) => {
   let scens = Object.values(
-    state.entities.scenarios.scenariosMap
+    state.scenarios.scenariosMap
   ).filter((sc) => {
     return sc.id.startsWith(featureId) && !sc.failedSteps && sc.passedSteps;
   });
@@ -200,7 +205,7 @@ export const getSkippedScenariosByFeatureId = (
   { id: featureId }
 ) => {
   let scens = Object.values(
-    state.entities.scenarios.scenariosMap
+    state.scenarios.scenariosMap
   ).filter((sc) => {
     return sc.id.startsWith(featureId) && sc.skippedSteps && !sc.failedSteps;
   });
@@ -249,7 +254,8 @@ export const getNumberOfFailedScenariosByFeatureId = createSelector([getLastEnte
 export const getNumberOfPassedScenariosByFeatureId = createSelector([getLastEnteredSearchValue, getPassedScenariosByFeatureId], _filterScenarios);
 export const getNumberOfSkippedScenariosByFeatureId = createSelector([getLastEnteredSearchValue, getSkippedScenariosByFeatureId], _filterScenarios);
 
-export default slice.reducer;
+export default generateSlice;
+export const features = slice(defaultState);
 export const {
   featureAdded
-} = slice.actions;
+} = features.actions;

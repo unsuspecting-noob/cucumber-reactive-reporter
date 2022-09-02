@@ -1,49 +1,46 @@
-import { Box, Grid, Paper, Stack } from "@mui/material";
-import React, { useState } from "react";
+import { Box, Card, CardActionArea, CardContent, CardHeader, Collapse, Stack, Typography } from "@mui/material";
 import { blue, cyan, green, purple, red, yellow } from '@mui/material/colors';
-import { getBoiler, getTheme } from "../store/uistates";
+import { getBoiler, getScenarioContainerCollapsed, getTheme, scenarioContainerClicked } from "../store/uistates";
 import {
   getFailedStepsByScenarioId,
   getPassedStepsByScenarioId,
   getPassedStepsNoBoilerByScenarioId,
   getSkippedStepsByScenarioId,
-  getStepsByScenarioId,
-  getStepsNoBoilerByScenarioId
 } from "../store/steps";
-import { makeStyles, useTheme } from '@mui/styles';
+import { useDispatch, useSelector } from "react-redux";
 
+import React from "react";
 import StepsList from "./StepsList";
-import { Typography } from "@mui/material";
 import { commonBoxStyles } from "./FeatureContainer";
 import {
   getScenarioById
 } from "../store/scenarios";
-import { useSelector } from "react-redux";
+import { styled } from '@mui/material/styles';
+import { useTheme } from '@mui/styles';
 
 const ScenarioContainer = (props) => {
+  const dispatch = useDispatch();
   const featureTags = props.featureTags;
   const {
     id,
     name,
     tags
-  } = useSelector((state) => getScenarioById(state, props));
+  } = useSelector((state) => getScenarioById(state, props)); //{id}
   let failedSteps = useSelector((state) => getFailedStepsByScenarioId(state, props));
   let skippedSteps = useSelector((state) => getSkippedStepsByScenarioId(state, props));
   let passedSteps = useSelector((state) => getPassedStepsByScenarioId(state, props));
   let passedStepsNoExtra = useSelector((state) => getPassedStepsNoBoilerByScenarioId(state, props));
-
-  let allSteps = useSelector((state) => getStepsByScenarioId(state, props));
   let showExtra = useSelector((state) => getBoiler(state));
-  let filteredSteps = useSelector((state) => getStepsNoBoilerByScenarioId(state, props));
-  let steps = showExtra ? allSteps : filteredSteps;
 
   let theme = useTheme();
   let themeName = useSelector((state) => getTheme(state));
 
 
-  const [collapse, setCollapse] = useState(false); //store state locally, should think about moving it into redux store
+  let collapse = useSelector((state) => getScenarioContainerCollapsed(state, props));
+  if (collapse === undefined) collapse = true; //dealing with the fact that our default state is not filled in since we track scenario ui state only after someone clicks it
+
   const handleClick = () => {
-    collapse ? setCollapse(false) : setCollapse(true);
+    dispatch(scenarioContainerClicked({ id: id }));
   };
   let nameColor = themeName === "dark" ? blue[300] : cyan[900];
   if (themeName === "dark") {
@@ -53,42 +50,59 @@ const ScenarioContainer = (props) => {
   }
 
   let scenarioTagArr = tags.map((t) => t.name);
-  let displayedTagsArr = featureTags.length ? scenarioTagArr.filter(x => !featureTags.includes(x)) : scenarioTagArr;
+  let displayedTagsArr = featureTags.length ? scenarioTagArr.filter(x => !featureTags.includes(x)).sort() : scenarioTagArr.sort();
 
-  const useStyles = makeStyles({
-    foo: {
-      "color": "red"
-    },
-
-
-  });
-  const classes = useStyles();
+  const Item = styled(Card)(({ theme }) => ({
+    ...theme.typography.body2,
+    textAlign: 'center',
+    color: theme.palette.text.secondary,
+    minWidth: "100%",
+    border: "2px solid",
+    borderColor: theme.palette.divider,
+    backgroundColor: themeName === "dark" ? null : '#d4d4d4'
+  }));
 
   return (
     <React.Fragment>
-      <Paper elevation={3} sx={{ width: "95%", minHeight: "8vh" }}>
-        <Stack direction="column" justifyContent="center" alignItems="center" spacing={0}>
-          <Grid className={classes.foo} spacing={0} container item direction="row" onClick={handleClick} justifyContent="center" alignItems="center" sx={{ minHeight: "8vh", maxHeight: "8vh" }}>
-            <Grid item xs={10.5} justifyContent="middle" alignItems="center" sx={{ padding: 0, minHeight: "8vh", maxHeight: "8vh" }}>
-              <Stack direction="column" justifyContent="left" spacing={1}>
-                <Typography variant="capture" align="left" style={{ marginLeft: "1vw", fontStyle: "italic", fontSize: "1.3vmin", fontWeight: "lighter", color: purple[300] }}>{displayedTagsArr.join(" ")}</Typography>
-                <Typography variant="body1" color={nameColor} align="left" alignItems="flex-start" style={{ textIndent: "1vw", marginLeft: "1vw", fontSize: "1.7vmin", textAlign: "left", wordWrap: "break-word", wordBreak: "break-all" }}>{name}</Typography>
+      <Item elevation={3} sx={{ width: "95%", minHeight: "8vh" }}>
+        <CardActionArea
+          onClick={handleClick}>
+          <CardHeader
+            disableTypography={false}
+            action={
+              <Stack direction="column">
+                <br />
+                <Stack direction="row-reverse" spacing={0.5} marginRight="1vw" xs={1.6} justifyContent="middle" alignItems="end">
+                  {failedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: red[700] }}>{failedSteps.length}</Box>) : null}
+                  {skippedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: yellow[700] }}>{skippedSteps.length}</Box>) : null}
+                  {passedStepsNoExtra.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: green[700] }}>{showExtra ? passedSteps.length : passedStepsNoExtra.length}</Box>
+                  ) : null}
+                </Stack>
               </Stack>
-            </Grid>
-            <Grid item xs={1.5}>
-              <Stack direction="row" spacing={0.5} justifyContent="middle">
-                <Box justifyContent="center" alignItems="center"
-                  sx={{ ...commonBoxStyles, backgroundColor: green[700] }}>{showExtra ? passedSteps.length : passedStepsNoExtra.length}</Box>
-                <Box justifyContent="center" alignItems="center"
-                  sx={{ ...commonBoxStyles, backgroundColor: red[700] }}>{failedSteps.length}</Box>
-                <Box justifyContent="center" alignItems="center"
-                  sx={{ ...commonBoxStyles, backgroundColor: yellow[700] }}>{skippedSteps.length}</Box>
+            }
+            title={
+              <Stack direction="column">
+                <br />
+                {name}
               </Stack>
-            </Grid>
-          </Grid>
-          {collapse ? (<React.Fragment><br /><StepsList id={id} steps={steps} themeName={themeName} /><br /></React.Fragment>) : null}
-        </Stack>
-      </Paper>
+            }
+            titleTypographyProps={{ color: nameColor, marginLeft: "1vw", fontSize: "1.7vmin", textAlign: "left" }}
+            subheader={
+              <Stack direction="column" justifyContent="flex-start">
+                <Typography variant="capture" align="left" style={{ marginLeft: "1vw", minHeight: "1vh", fontStyle: "italic", fontSize: "1.3vmin", fontWeight: "bold", color: purple[400] }}>{displayedTagsArr.join(" ")}</Typography>
+              </Stack>
+            }
+          />
+
+        </CardActionArea>
+        <Collapse in={!collapse} timeout="auto" unmountOnExit>
+          <CardContent>
+            <React.Fragment>
+              <StepsList id={id} themeName={themeName} />
+            </React.Fragment>
+          </CardContent>
+        </Collapse>
+      </Item>
     </React.Fragment >
   );
 };

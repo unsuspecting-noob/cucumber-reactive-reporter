@@ -1,10 +1,10 @@
-import { Fab, Paper, Table, TableBody, TableCell, TableContainer, TableRow, TextareaAutosize } from "@mui/material";
+import { Fab, Paper, Table, TableBody, TableCell, TableContainer, TableRow } from "@mui/material";
 
 import ContentCopy from '@mui/icons-material/ContentCopy';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import React from "react";
+import TextArea from "./TextArea";
 import clsx from 'clsx';
-import { commonTextStyle } from "./styles/commonStyles";
 import { makeStyles } from '@mui/styles';
 
 const AttachmentString = (props) => {
@@ -26,19 +26,18 @@ const AttachmentString = (props) => {
 
     });
     const classes = useStyles();
-
     let frameColor = bColor ? bColor : "grey";
+    let cont = content.replace(/\\n/g, "\n");
+
     return content ? (
         <TableContainer component={Paper} style={{ marginBottom: "10px", marginTop: "10px" }}>
             <Table size="small" >
                 <TableBody>
                     <TableRow hover className={classes.root}>
                         <TableCell align="center" style={{ border: "groove", borderColor: frameColor }}>
-                            <TextareaAutosize
-                                maxRows={30}
-                                readOnly
-                                style={{ ...commonTextStyle, textAlign: "justify" }}
-                                defaultValue={content} />
+                            <TextArea
+                                content={cont}
+                            />
                         </TableCell>
                         <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
                             <CopyToClipboard text={content}>
