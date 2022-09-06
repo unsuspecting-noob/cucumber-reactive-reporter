@@ -6,7 +6,7 @@ ncp.limit = 16;
 const BUILD_D = "./build";
 const OUT_D = "./dist";
 const CURRENT_D = "./";
-const INCLUDE = ["index.mjs"]
+const INCLUDE = []
 
 
 
@@ -59,8 +59,4 @@ let copyIncluded = async () => {
 let main = async function () {
     await copyBuild(); //TODO: filter test files like _cucumber-results.json
     await copyIncluded();
-    //copy-rename release-package.json, this is a temp hack before i figure out how to properly package everything
-    await cp(path.join(CURRENT_D, "release-package.json"), path.join(OUT_D, "package.json"));
-    await cp(path.join(CURRENT_D, "release-README.md"), path.join(OUT_D, "README.md"));
-    await cp(path.join(CURRENT_D, "release-rollup.config.js"), path.join(OUT_D, "rollup.config.js"));
 }();

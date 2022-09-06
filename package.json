@@ -1,11 +1,27 @@
 {
   "name": "cucumber-reactive-reporter",
-  "version": "0.1.0",
-  "description": "A react html report for cucumberjs",
+  "version": "1.0.0",
+  "description": "A filterable html report generator for cucumberjs (react-redux)",
   "private": true,
   "homepage": "./",
-  "main": "index.mjs",
+  "main": "dist/cucumberjs-reporter.cjs.js",
+  "module": "dist/cucumberjs-reporter.esm.js",
+  "files": ["react/**/*"],
   "repository": "github.com:unsuspecting-noob/cucumber-reactive-reporter.git",
+  "keywords": ["cucumber", "cucumberjs", "html", "report", "reporter"],
+  "license": "MIT",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "rollup -c",
+    "install": "npm run -s build",
+    "prebuildreact": "rm -rf build",
+    "buildreact": "react-scripts build && npm run build",
+    "preinstallmodule": "rm -rf dist",
+    "installmodule": "npm run buildreact && node prepDist.mjs",
+    "postinstallmodule": "node install.mjs",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
   "dependencies": {
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.8.4",
@@ -51,16 +67,6 @@
     "redux-thunk": "^2.3.0",
     "renamer": "^4.0.0",
     "replace-in-file": "^6.3.2"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "prebuild": "rm -rf build",
-    "build": "react-scripts build",
-    "preinstall": "rm -rf dist",
-    "install": "npm run build && node prepDist.mjs",
-    "postinstall": "node install.mjs",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": "react-app"
