@@ -4,23 +4,23 @@ provides filtering via tags ans status and few other things.
 
 *have not been tested with latest cucumberjs
 
-npm run install
-http serve the dist directory
-expects _cucumber-results.json file in the root
-expects _reporter_settings_.json file in the root
-ex.:
+Example usage:
 
-{
-    "title": "my report",
-    "description": "Report description stuff",
-    "metadata": {
-        "key1": "val1",
-        "key2": "val2"
-    }
-}
+```
+import reporter from '@unsuspecting-noob/cucumber-reactive-reporter';
+
+...
+let reportFilePath="full path to cucumber output json";
+let reportFolderPath="path to folder where the html report will go";
+let meta = { //there will be a metadata section in the report that will display your key value pairs for posterity
+  "key1": "value1",
+  "fizz: "buzz"
+};
+await reporter.generate(reportFilePath, reportFolderPath, { title: "my tests", description: "2 + 2, is it still 4?", metadata: meta });
+```
 
 
-TODOs:
+TODOs and ideas for improvement:
 
 1. consider adding hooks for linking to jira the way allure does it: 
 links: {
