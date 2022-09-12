@@ -26,7 +26,8 @@ let meta = { //there will be a metadata section in the report that will display 
 await reporter.generate(reportFilePath, reportFolderPath, { title: "my tests", description: "2 + 2, is it still 4?", metadata: meta });
 ```
 
-
+#Sample page
+[link](https://d3sw.github.io/qa-jat-utils/1.0.0/index.html)
 ## TODOs and ideas for improvement:
 
 1. consider adding hooks for linking to jira the way allure does it: 
