@@ -27,7 +27,7 @@ await reporter.generate(reportFilePath, reportFolderPath, { title: "my tests", d
 ```
 
 #Sample page
-[link](https://d3sw.github.io/qa-jat-utils/1.0.0/index.html)
+[link](https://unsuspecting-noob.github.io/cucumber-reactive-reporter/index.html)
 ## TODOs and ideas for improvement:
 
 1. consider adding hooks for linking to jira the way allure does it: 
