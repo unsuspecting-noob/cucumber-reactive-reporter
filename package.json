@@ -2,7 +2,7 @@
   "name": "cucumber-reactive-reporter",
   "version": "1.0.0",
   "description": "A filterable html report generator for cucumberjs written in react",
-  "private": true,
+  "private": false,
   "homepage": "./",
   "main": "dist/cucumber-reactive-reporter.cjs.js",
   "module": "dist/cucumber-reactive-reporter.esm.js",
@@ -19,6 +19,8 @@
     "pregeneratedist": "rm -rf dist",
     "generatedist": "npm run buildreact && node prepDist.mjs",
     "postgeneratedist": "node install.mjs",
+    "pretestinstall": "rm -rf test",
+    "testinstall": "node devtest.mjs && touch test/.nojekyll",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
