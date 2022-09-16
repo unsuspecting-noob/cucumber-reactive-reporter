@@ -3,10 +3,10 @@ import ncp from "ncp";
 import path from "path";
 
 ncp.limit = 16;
-const BUILD_D = "./build";
+const BUILD_D = "./react";
 const OUT_D = "./dist";
 const CURRENT_D = "./";
-const INCLUDE = []
+const INCLUDE = ["package.json"]
 
 
 

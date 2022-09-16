@@ -65,7 +65,7 @@ const hasReferences = (p) => {
 // Get path to image directory
 
 async function run() {
-    const buildPath = path.resolve(__dirname, 'build');
+    const buildPath = path.resolve(__dirname, 'react');
 
     // Get an array of the files inside the folder recursively
     files = await readSync(buildPath);

@@ -8,7 +8,7 @@ import ut from "util";
 
 ncp.limit = 16;
 
-let modulePath = require.resolve("cucumberjs-reporter/package.json"); //trick to resolve path to the installed module
+let modulePath = require.resolve("./package.json"); //trick to resolve path to the installed module
 
 /**  
  options.filter - a RegExp instance, against which each file name is tested to determine whether to copy it or not, or a function taking single parameter: copied file name, returning true or false, determining whether to copy file or not.
@@ -54,7 +54,7 @@ const generate = async (source, dest, options) => {
 
     const CUCUMBER_JSON_PATH = "_cucumber-results.json";
     const SETTINGS_JSON_PATH = "_reporter_settings.json";
-    const HTML_PATH = path.join(path.dirname(modulePath), "dist", "react");
+    const HTML_PATH = path.join(path.dirname(modulePath), "react");
 
     //defaults
     const {

@@ -23,7 +23,7 @@ let meta = { //there will be a metadata section in the report that will display 
   "key1": "value1",
   "fizz: "buzz"
 };
-await reporter.generate(reportFilePath, reportFolderPath, { title: "my tests", description: "2 + 2, is it still 4?", metadata: meta });
+await reporter.generate(reportFilePath, reportFolderPath, { title: "my tests", description: "My test suite description", metadata: meta });
 ```
 
 #Sample page
