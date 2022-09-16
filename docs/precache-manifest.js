@@ -1,30 +1,34 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "c64debf4a473444a67ab2c275f205e58",
+    "revision": "452417ddfbbd869ca40a482551511b28",
     "url": "./index.html"
   },
   {
-    "revision": "6765356444fdc91e756b",
+    "revision": "243e55865e4fd62148be",
     "url": "./static/css/2.css"
   },
   {
-    "revision": "c7a0d8bc52b86f1d2476",
+    "revision": "498f1c831869ea10ae56",
     "url": "./static/css/main.css"
   },
   {
-    "revision": "6765356444fdc91e756b",
+    "revision": "243e55865e4fd62148be",
     "url": "./static/js/2.js"
   },
   {
-    "revision": "929c1c94a7326cfb4f4206db3ff50308",
+    "revision": "40a6034f8347758ed4443191f7649e9a",
     "url": "./static/js/2.js.LICENSE.txt"
   },
   {
-    "revision": "c7a0d8bc52b86f1d2476",
+    "revision": "498f1c831869ea10ae56",
     "url": "./static/js/main.js"
   },
   {
-    "revision": "1bd4288999afa9c641b3",
+    "revision": "4e0e34f265fae8f33b01b27ae29d9d6f",
+    "url": "./static/js/main.LICENSE.txt"
+  },
+  {
+    "revision": "921795e980c845532d8f",
     "url": "./static/js/runtime-main.js"
   },
   {
@@ -48,131 +52,131 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "./static/media/fontawesome-webfont.woff"
   },
   {
-    "revision": "130eafc23a987a6cf560c9b69af84818",
+    "revision": "2323284ef85bfeaca074c668b72109c6",
     "url": "./static/media/roboto-all-300-normal.woff"
   },
   {
-    "revision": "73f26bf98a715ecab4d2287ff3a02ad0",
+    "revision": "62b936e168110e58e89e70ec82e22755",
     "url": "./static/media/roboto-all-400-normal.woff"
   },
   {
-    "revision": "08926d7a008503f9c640b1772c225476",
+    "revision": "68d75d959b2a0e9958b11d781338c8f7",
     "url": "./static/media/roboto-all-500-normal.woff"
   },
   {
-    "revision": "8b2b2aae46819bb8c37c438760dbb4f6",
+    "revision": "aa462125b8faf7600001e1fe9b47e216",
     "url": "./static/media/roboto-all-700-normal.woff"
   },
   {
-    "revision": "4a2f6d1316cc560ede07d3334d3b486a",
+    "revision": "9b9ec29522d1bf8924ccc2d917e1807b",
     "url": "./static/media/roboto-cyrillic-300-normal.woff2"
   },
   {
-    "revision": "ba2c6cb0af81f8da49a960db84f26b7c",
+    "revision": "d9ac47c7e500fb7083b8d595eaf6fe12",
     "url": "./static/media/roboto-cyrillic-400-normal.woff2"
   },
   {
-    "revision": "ad72d5d4f30e8740d5e7aa4ba3348aa4",
+    "revision": "7b08b9e11fc6b8a8a1398b357e874144",
     "url": "./static/media/roboto-cyrillic-500-normal.woff2"
   },
   {
-    "revision": "37afd1fecbffb80a9eded06f4bb964b8",
+    "revision": "6f112ec2b932ee12379442c42853244e",
     "url": "./static/media/roboto-cyrillic-700-normal.woff2"
   },
   {
-    "revision": "607808ee335a962bdfa989bbfd5e8c57",
+    "revision": "d04413353a32aed8a0db452373452870",
     "url": "./static/media/roboto-cyrillic-ext-300-normal.woff2"
   },
   {
-    "revision": "2e0b8660b87034ecf56aa9f488fbc08e",
+    "revision": "c00467dc3792a8ab586955a3faefcac9",
     "url": "./static/media/roboto-cyrillic-ext-400-normal.woff2"
   },
   {
-    "revision": "d697abd346b57baaaa3c64733e998c6a",
+    "revision": "2742d81afb69e902e4513dc7cdda0a7f",
     "url": "./static/media/roboto-cyrillic-ext-500-normal.woff2"
   },
   {
-    "revision": "638fd23bbc8523124320a4bee32cc43b",
+    "revision": "e0bc9313fdde7851c88c901baf3c2b5c",
     "url": "./static/media/roboto-cyrillic-ext-700-normal.woff2"
   },
   {
-    "revision": "203e97b336d3bc83c8b492a9868d5574",
+    "revision": "dcdaee374d5bbeab0a5ed5c8cf39a6cd",
     "url": "./static/media/roboto-greek-300-normal.woff2"
   },
   {
-    "revision": "22786f243202d7912399ffd10c76fe78",
+    "revision": "28668857bef1b85c5748a482cf9b74af",
     "url": "./static/media/roboto-greek-400-normal.woff2"
   },
   {
-    "revision": "89de9101b10a3fd497fef480319ff743",
+    "revision": "53f395eb854a40e978706b1082570e42",
     "url": "./static/media/roboto-greek-500-normal.woff2"
   },
   {
-    "revision": "52df702db98aa7138730d8ef06b3a71c",
+    "revision": "3f8b2aa43c439ca2c8930c198320c231",
     "url": "./static/media/roboto-greek-700-normal.woff2"
   },
   {
-    "revision": "853ac2aeeb42298d3b87f80fdf1f9486",
+    "revision": "c2be5367fbf0e1066261fd78eb103f4a",
     "url": "./static/media/roboto-greek-ext-300-normal.woff2"
   },
   {
-    "revision": "5cff07beab63ec777fc73ac0483811b0",
+    "revision": "35de3738b76d249ed060dd3d0f9286be",
     "url": "./static/media/roboto-greek-ext-400-normal.woff2"
   },
   {
-    "revision": "643470710a60fdc4a1c3df732b114ef5",
+    "revision": "e7b7001dff6c14165abdc0fefdecae06",
     "url": "./static/media/roboto-greek-ext-500-normal.woff2"
   },
   {
-    "revision": "1a7d7a36c39d76fb49a80f1b51baf065",
+    "revision": "2953af0021626d3c3078b17590118908",
     "url": "./static/media/roboto-greek-ext-700-normal.woff2"
   },
   {
-    "revision": "80fe119e5efa3911b9d61b265f723b3d",
+    "revision": "b9c29351c46f3e8c8631c4002457f48a",
     "url": "./static/media/roboto-latin-300-normal.woff2"
   },
   {
-    "revision": "aa23b7b4bcf2b8f0e876106bb3de69c6",
+    "revision": "15d9f621c3bd1599f0169dcf0bd5e63e",
     "url": "./static/media/roboto-latin-400-normal.woff2"
   },
   {
-    "revision": "f00e7e4432f7c70d8c97efbe2c50d43b",
+    "revision": "3a44e06eb954b96aa043227f3534189d",
     "url": "./static/media/roboto-latin-500-normal.woff2"
   },
   {
-    "revision": "bf28241e67511184c14dbd0ef7d39f91",
+    "revision": "e9f5aaf547f165386cd313b995dddd8e",
     "url": "./static/media/roboto-latin-700-normal.woff2"
   },
   {
-    "revision": "065438c98de2b7f979decf5d7e3eb8a0",
+    "revision": "716871ec15f054ec158445180fe280e1",
     "url": "./static/media/roboto-latin-ext-300-normal.woff2"
   },
   {
-    "revision": "718dded3393324e992b225ac61329e0c",
+    "revision": "87ace20058325aa069320aa4af875dff",
     "url": "./static/media/roboto-latin-ext-400-normal.woff2"
   },
   {
-    "revision": "dd464b28ac4bc3d57d9336cf31fde8f1",
+    "revision": "e36fccd06262bef92e7a9841e2202225",
     "url": "./static/media/roboto-latin-ext-500-normal.woff2"
   },
   {
-    "revision": "01a68cca6394bb55312ae1d723285d73",
+    "revision": "deb26e9b1a25438118e5d39d741ae6b6",
     "url": "./static/media/roboto-latin-ext-700-normal.woff2"
   },
   {
-    "revision": "d47048a60dc372aa9776bb0b816bb238",
+    "revision": "48c684d99330969e3ce90b9e9da2d698",
     "url": "./static/media/roboto-vietnamese-300-normal.woff2"
   },
   {
-    "revision": "756af8e5560d200e53b52b1ff70f2ad0",
+    "revision": "ca3b09b62fda648a4511700413313fd0",
     "url": "./static/media/roboto-vietnamese-400-normal.woff2"
   },
   {
-    "revision": "b32ad0e3f979400d3653dd13459777ae",
+    "revision": "7cda2cfee99d697daf8c14819d9004eb",
     "url": "./static/media/roboto-vietnamese-500-normal.woff2"
   },
   {
-    "revision": "371c52ef9af49885977af6fbffe823f9",
+    "revision": "cdaab83619fcacd4027a77c99dd51e69",
     "url": "./static/media/roboto-vietnamese-700-normal.woff2"
   }
 ]);

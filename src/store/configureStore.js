@@ -13,7 +13,7 @@ export default async function () {
   let preloadedState;
   try {
     console.time("loadJSON")
-    let response = await fetch("_cucumber-results.json");
+    let response = await fetch("./_cucumber-results.json");
     preloadedState = await response.json();
     console.timeEnd("loadJSON")
   } catch (err) {
