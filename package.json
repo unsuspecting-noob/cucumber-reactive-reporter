@@ -11,7 +11,7 @@
   "keywords": ["cucumber", "cucumberjs", "html", "report", "reporter"],
   "license": "MIT",
   "scripts": {
-    "start": "react-scripts start",
+    "start": "PUBLIC_URL=./ react-scripts start",
     "build": "rollup -c",
     "prebuildreact": "rm -rf build && rm -rf react",
     "buildreact": "react-scripts build && npm run build",
