@@ -9,4 +9,7 @@ let metadata = {
     "more keys": "value"
 };
 options.metadata = metadata;
-Reporter.generate("public/cucumber-results.json", "test/", options)
+
+(async () => {
+    await Reporter.generate("public/cucumber-results.json", "test/", options);
+})();

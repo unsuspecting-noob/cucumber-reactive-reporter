@@ -4,30 +4,50 @@
 Parses output of cucumberjs
 provides filtering via tags ans status and few other things.</b>
 <br>
-*have not been tested with latest cucumberjs
+### Why another reporter? ###
+<b>I have made a somewhat odd choice of using cucumberjs for microservice API testing, unlike the usual application of testing UIs.
+Because validation was centered on various data, i quickly ran into limitations of existing reporters with data attachments. 
+These are the things that were important to me that i tried to implement in this reporter:
+</b>
+
+* Control over how data is displayed, including the ability to pass html snippets as attachments and render them in the reporter: (can be useful when pointing to "local" files generated as part of the test run)
+* Ability to filter and search the reports based on such things like status and tags
+* Ability to work with large-ish amounts of tests, some existing reports become unwieldy or slow
+* Control filter and search configuration with url params, allows sharing a preconfigured link in case you want to share a specific failure for example.
+
 </p>
 
 ## Install
 
 ```shell
-$ npm install @unsuspecting-noob/cucumber-reactive-reporter
+$ npm install cucumber-reactive-reporter
 ```
 ## Example usage:
 
 ```js
-import reporter from '@unsuspecting-noob/cucumber-reactive-reporter';
-...
-let reportFilePath="full path to cucumber output json";
-let reportFolderPath="path to folder where the html report will go";
-let meta = { //there will be a metadata section in the report that will display your key value pairs for posterity
-  "key1": "value1",
-  "fizz: "buzz"
+import Reporter from "cucumber-reactive-reporter";
+let options = {
+    "title": "Cucumber reactive reporter sample",
+    "description": "... test suite description"
 };
-await reporter.generate(reportFilePath, reportFolderPath, { title: "my tests", description: "My test suite description", metadata: meta });
+let metadata = {
+    "some key": "value",
+    "additional key": "value",
+    "more keys": "value"
+};
+options.metadata = metadata;
+(async () => {
+    await Reporter.generate("public/cucumber-results.json", "test/", options);
+})();
 ```
 
-#Sample page
+### See sample in action:
 [link](https://unsuspecting-noob.github.io/cucumber-reactive-reporter/index.html)
+
+* @TAGS button displays a list of every tag found in the report
+* METADATA button opens a section with any custom key value pairs passed in during creating of the report
+* Search window allows for cucumber expressions to filter down to features with scenarios matching the expression, for example:
+    * ```(@catfacts or @image) and not @1_tag```
 ## TODOs and ideas for improvement:
 
 1. consider adding hooks for linking to jira the way allure does it: 
