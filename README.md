@@ -66,3 +66,10 @@ links: {
 2. patch more settings for intial render (before/after toggle, theme, filter etc.)
 3. handle state "ambiguous" (probably lump em with errors), generate one when there are two test definitions with similar regex
 4. Figure out a strategy for handling combined reports (from parallel runs)
+
+### Release notes
+
+| Version | Description |
+| ----------- | ----------- |
+| 1.0.2| improvements to debugging and readme|
+| 1.0.3 | fixed crashes when search threw syntax errors<br>fixed css for @tags and @metadata buttons |
