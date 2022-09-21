@@ -37,7 +37,7 @@ let metadata = {
 };
 options.metadata = metadata;
 (async () => {
-    await Reporter.generate("public/cucumber-results.json", "test/", options);
+    await Reporter.generate("mytest/cucumber-output.json", "htmlOutputFolder/", options);
 })();
 ```
 
