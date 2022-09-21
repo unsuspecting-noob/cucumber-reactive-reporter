@@ -65,8 +65,13 @@ let slice = createSlice({
 
 const _filterScenarios = (searchString, scenarios) => {
   let retVal;
-  if (searchString) {
-    const expr = parseTags(searchString);
+  let expr;
+  try {
+    expr = parseTags(searchString);
+  } catch (e) {
+    console.log(e);
+  }
+  if (expr) {
     retVal = scenarios.filter(
       (f) => {
         let tags = f.tags.map((t) => t.name);

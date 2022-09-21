@@ -6,7 +6,7 @@
   "homepage": "https://github.com/unsuspecting-noob/cucumber-reactive-reporter",
   "main": "dist/cucumber-reactive-reporter.cjs.js",
   "module": "dist/cucumber-reactive-reporter.esm.js",
-  "files": ["dist/**/*"],
+  "files": ["dist/*.js", "dist/react/**/*", "dist/package.json"],
   "repository": "github.com:unsuspecting-noob/cucumber-reactive-reporter.git",
   "keywords": ["cucumber", "cucumberjs", "html", "report", "reporter"],
   "license": "MIT",

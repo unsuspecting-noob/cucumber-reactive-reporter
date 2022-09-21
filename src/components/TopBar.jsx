@@ -263,8 +263,8 @@ const TopBar = () => {
                     {displayMetadataState ? (
                         <Stack direction="column">
                             <Divider variant="fullWidth" sx={{
-                                minWidth: "50vw",
-                                maxWidth: "90vw"
+                                minWidth: "55vw",
+                                maxWidth: "95vw"
                             }}>Metadata</Divider>
 
                             <Stack direction="column"
@@ -285,10 +285,11 @@ const TopBar = () => {
                     ) : <React.Fragment />
                     }
                     {displayTagHelpState ? (
-                        <Stack direction="column" sx={{
-                            maxWidth: "90vw"
-                        }}>
-                            <Divider variant="middle" >tags</Divider>
+                        <Stack direction="column">
+                            <Divider variant="fullWidth" sx={{
+                                minWidth: "55vw",
+                                maxWidth: "95vw"
+                            }}>tags</Divider>
                             <Stack direction="row"
                                 spacing={1}
                                 alignItems="center"

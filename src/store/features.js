@@ -215,8 +215,13 @@ export const getSkippedScenariosByFeatureId = (
 
 const _filterScenarios = (searchString, scenarios) => {
   let retVal;
-  if (searchString) {
-    const expr = parseTags(searchString);
+  let expr;
+  try {
+    expr = parseTags(searchString);
+  } catch (e) {
+    console.log(e)
+  }
+  if (expr) {
     retVal = scenarios.filter(
       (f) => {
         let tags = f.tags.map((t) => t.name);
@@ -232,8 +237,13 @@ const _filterScenarios = (searchString, scenarios) => {
 
 const _filterFeatures = (searchString, allFeatures) => {
   let retVal;
-  if (searchString) {
-    const expr = parseTags(searchString);
+  let expr;
+  try {
+    expr = parseTags(searchString);
+  } catch (e) {
+    console.log(e);
+  }
+  if (expr) {
     retVal = allFeatures.filter(
       (f) => {
         let tags = f.allTags.map((t) => t.name);
