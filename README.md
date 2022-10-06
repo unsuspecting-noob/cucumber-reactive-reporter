@@ -5,15 +5,17 @@ Parses output of cucumberjs
 provides filtering via tags ans status and few other things.</b>
 <br>
 ### Why another reporter? ###
-<b>I have made a somewhat odd choice of using cucumberjs for microservice API testing, unlike the usual application of testing UIs.
-Because validation was centered on various data, i quickly ran into limitations of existing reporters with data attachments. 
-These are the things that were important to me that i tried to implement in this reporter:
+<b>The main motivation behind this project was the need to control various data attachments and how they show up in reports.
+Existing libraries gave very sandboxy and limited options for things like attaching a custom html line to the report.
+
+Here are some of the things that were deemed important to implement in this reporter:
 </b>
 
 * Control over how data is displayed, including the ability to pass html snippets as attachments and render them in the reporter: (can be useful when pointing to "local" files generated as part of the test run)
 * Ability to filter and search the reports based on such things like status and tags
 * Ability to work with large-ish amounts of tests, some existing reports become unwieldy or slow
 * Control filter and search configuration with url params, allows sharing a preconfigured link in case you want to share a specific failure for example.
+* Better use available space on the report page (needs tweaking)
 
 </p>
 
@@ -71,6 +73,6 @@ links: {
 
 | Version | Description |
 | ----------- | ----------- |
-| 1.0.2| improvements to debugging and readme|
+| 1.0.2 | improvements to debugging and readme |
 | 1.0.3 | fixed crashes when search threw syntax errors<br>fixed css for @tags and @metadata buttons |
 | 1.0.4 | Added more pagination choices for scenariosList, 50 and 100 |
