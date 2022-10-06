@@ -9,7 +9,7 @@ import {
   getAllScenariosForFeatureWithState,
 } from "../store/scenarios";
 
-const SCENARIOS_PER_PAGE = [5, 10, 20, 1];
+const SCENARIOS_PER_PAGE = [5, 10, 20, 50, 100, 1];
 
 const ScenariosList = (props) => {
   const { id } = props;
