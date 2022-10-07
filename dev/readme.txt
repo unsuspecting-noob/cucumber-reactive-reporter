@@ -8,4 +8,6 @@ to check in new sample to have it show up in github, check everything in /test f
 
 publish notes:
 
+#npm run generatedist 
+clean up any dev files from dist:
 careful when publishing dist, it can have debug json files left from /public folder that can be used during development
