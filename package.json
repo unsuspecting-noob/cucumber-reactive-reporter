@@ -14,7 +14,7 @@
     "start": "PUBLIC_URL=./ react-scripts start",
     "build": "rollup -c",
     "prebuildreact": "rm -rf build && rm -rf react",
-    "buildreact": "react-scripts build && npm run build",
+    "buildreact": "PUBLIC_URL=. react-scripts build && npm run build",
     "postbuildreact": "cp -R ./build ./react",
     "pregeneratedist": "rm -rf dist",
     "generatedist": "npm run buildreact && node prepDist.mjs",
