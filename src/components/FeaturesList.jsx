@@ -86,16 +86,11 @@ const FeaturesList = () => {
       break;
   }
 
-  const breakpointColumnsObj = {
-    default: features.length <= 10 ? 1 : 2,
-    1280: 1
-  };
 
   const fakeprops = {
     id: "feature_paginator"
   }
   const pagenatorInfo = useSelector((state) => getPaginatorInfo(state, fakeprops));
-  console.dir(pagenatorInfo)
   let { page = 1, pSize = FEATURES_PER_PAGE[0], pStart = 0, pEnd = FEATURES_PER_PAGE[0], searchVal = null } = pagenatorInfo ? pagenatorInfo : {};
 
   const onPaginatorChange = (s, e, page, size, searchVal) => {
@@ -122,11 +117,15 @@ const FeaturesList = () => {
   }
 
   let displayedFeatures = features.slice(pStart, pEnd);
+  const breakpointColumnsObj = {
+    default: displayedFeatures.length <= 10 ? 1 : 2,
+    1280: 1
+  };
   return (
     <React.Fragment>
       <Box sx={{ p: 1, border: '2px' }}>
         <Stack direction="column">
-          {totalPages > 1 ? (<CustomPagination page={page} searchVal={searchVal} pageSize={pSize} pageSizeArray={FEATURES_PER_PAGE} numItems={features.length} shape="rounded" size="small" boundaryCount={2} onChange={onPaginatorChange} />) : null}
+          {(displayedFeatures.length >= 10 || features.length >= 10) ? (<CustomPagination page={page} searchVal={searchVal} pageSize={pSize} pageSizeArray={FEATURES_PER_PAGE} numItems={features.length} shape="rounded" size="small" boundaryCount={2} onChange={onPaginatorChange} />) : null}
           <Masonry breakpointCols={breakpointColumnsObj} className="my-masonry-grid" columnClassName="my-masonry-grid_column">
             {numCurrentScenarios ? displayedFeatures.map((f) => (
               <Grid container key={featureCount++}>

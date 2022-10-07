@@ -78,3 +78,4 @@ links: {
 | 1.0.4 | Added more pagination choices for scenariosList, 50 and 100 |
 | 1.0.5 | Fixing publishing code and adding notes |
 | 1.0.6 | Added pagination to the main feature screen, shows up if above 50 |
+| 1.0.7 | Changed feature pagination to be always on if above 10 elements, the reason why is you can change to display 10 at a time to force single column|
