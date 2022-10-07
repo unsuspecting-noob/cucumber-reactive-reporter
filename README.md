@@ -77,3 +77,4 @@ links: {
 | 1.0.3 | fixed crashes when search threw syntax errors<br>fixed css for @tags and @metadata buttons |
 | 1.0.4 | Added more pagination choices for scenariosList, 50 and 100 |
 | 1.0.5 | Fixing publishing code and adding notes |
+| 1.0.6 | Added pagination to the main feature screen, shows up if above 50 |

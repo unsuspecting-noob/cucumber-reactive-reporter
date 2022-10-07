@@ -1,6 +1,6 @@
 import '../overwriteStyles.css'
 
-import { Box, Grid } from "@mui/material";
+import { Box, Grid, Stack } from "@mui/material";
 import {
   FeaturesToggleValuesEnum,
   getFeaturesToggleValue,
@@ -17,16 +17,21 @@ import {
   getPassedMatchingFeatureIds,
   getSkippedMatchingFeatureIds
 } from "../store/features";
+import { getPaginatorInfo, paginatorChange } from "../store/uistates";
+import { useDispatch, useSelector } from "react-redux";
 
+import CustomPagination from "./CustomPagination";
 import FeatureContainer from "./FeatureContainer";
 import Masonry from 'react-masonry-css';
 import React from "react";
 import {
   getScenariosForAListOfFeatures
 } from "../store/scenarios";
-import { useSelector } from "react-redux";
+
+const FEATURES_PER_PAGE = [50, 100, 30, 10];
 
 const FeaturesList = () => {
+  const dispatch = useDispatch();
   let featureCount = 0;
   let features;
   let displayFeaturesToggleState = useSelector((state) => getFeaturesToggleValue(state));
@@ -85,16 +90,51 @@ const FeaturesList = () => {
     default: features.length <= 10 ? 1 : 2,
     1280: 1
   };
+
+  const fakeprops = {
+    id: "feature_paginator"
+  }
+  const pagenatorInfo = useSelector((state) => getPaginatorInfo(state, fakeprops));
+  console.dir(pagenatorInfo)
+  let { page = 1, pSize = FEATURES_PER_PAGE[0], pStart = 0, pEnd = FEATURES_PER_PAGE[0], searchVal = null } = pagenatorInfo ? pagenatorInfo : {};
+
+  const onPaginatorChange = (s, e, page, size, searchVal) => {
+    dispatch(paginatorChange({
+      id: fakeprops.id,
+      page: page,
+      pStart: s,
+      pEnd: e,
+      pSize: size,
+      searchVal: searchVal
+    }));
+  }
+
+  let totalPages = Math.ceil(features.length / pSize);
+  /**
+   * bug fix: if you filter to see all, and there is a failed scenario in some featureList on page2,
+   * if you then change the filter to failed the paginator will remember that its on page2, but the filtered scenario list will have only a handful of failed
+   * scenarios so nothing will be displayed. We need to check if recalculation is needed.
+   */
+  if (totalPages < page) {
+    pStart = 0;
+    pEnd = FEATURES_PER_PAGE[0];
+    page = 1;
+  }
+
+  let displayedFeatures = features.slice(pStart, pEnd);
   return (
     <React.Fragment>
       <Box sx={{ p: 1, border: '2px' }}>
-        <Masonry breakpointCols={breakpointColumnsObj} className="my-masonry-grid" columnClassName="my-masonry-grid_column">
-          {numCurrentScenarios ? features.map((f) => (
-            <Grid container key={featureCount++}>
-              <FeatureContainer id={f.id} featureViewState={displayFeaturesToggleState} filter={filterVal} themeName={themeName} />
-            </Grid>
-          )) : null}
-        </Masonry>
+        <Stack direction="column">
+          {totalPages > 1 ? (<CustomPagination page={page} searchVal={searchVal} pageSize={pSize} pageSizeArray={FEATURES_PER_PAGE} numItems={features.length} shape="rounded" size="small" boundaryCount={2} onChange={onPaginatorChange} />) : null}
+          <Masonry breakpointCols={breakpointColumnsObj} className="my-masonry-grid" columnClassName="my-masonry-grid_column">
+            {numCurrentScenarios ? displayedFeatures.map((f) => (
+              <Grid container key={featureCount++}>
+                <FeatureContainer id={f.id} featureViewState={displayFeaturesToggleState} filter={filterVal} themeName={themeName} />
+              </Grid>
+            )) : null}
+          </Masonry>
+        </Stack>
       </Box>
     </React.Fragment >
   );
