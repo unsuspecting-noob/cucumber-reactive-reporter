@@ -247,9 +247,6 @@ let _processStep = (state, scenarioId, st) => {
         hidden,
         keyword,
         line,
-        match: {
-            location
-        },
         name,
         result: {
             duration,
@@ -257,7 +254,8 @@ let _processStep = (state, scenarioId, st) => {
             status
         }
     } = st;
-
+    let location = "";
+    if (st.match) location = st.match.location;
     let step = {
         args,
         duration,
