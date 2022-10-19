@@ -42,7 +42,7 @@ const StepContainer = (props) => {
   let duration_str = "";
   let m = d.minutes();
   let s = d.seconds();
-  let ms = d.milliseconds();
+  let ms = Math.round(d.milliseconds());
   if (m > 0) duration_str = duration_str + `${m}m`;
   if (s > 0) duration_str = duration_str + `${duration_str !== "" ? " " + s + "s" : s + "s"}`;
   if (ms > 0) duration_str = duration_str + `${duration_str !== "" ? " " + ms + "ms" : ms + "ms"}`;
