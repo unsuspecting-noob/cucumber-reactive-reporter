@@ -9,7 +9,7 @@
     "precache-manifest.js": "./precache-manifest.js",
     "service-worker.js": "./service-worker.js",
     "static/js/2.js.LICENSE.txt": "./static/js/2.js.LICENSE.txt",
-    "static/js/main.js.LICENSE.txt": "./static/js/main.js.LICENSE.txt",
+    "static/js/main.LICENSE.txt": "./static/js/main.LICENSE.txt",
     "static/media/font-awesome.css": "./static/media/fontawesome-webfont.woff",
     "static/media/300.css": "./static/media/roboto-vietnamese-300-normal.woff2",
     "static/media/400.css": "./static/media/roboto-vietnamese-400-normal.woff2",
