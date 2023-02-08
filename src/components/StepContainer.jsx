@@ -38,7 +38,11 @@ const StepContainer = (props) => {
   if (isNaN(duration)) nanoseconds = 0;
   //figure out total run time
   DayJs.extend(Duration);
-  let d = DayJs.duration(nanoseconds / 1000000);
+  let t = nanoseconds / 1000000;
+  if (t % 1 !== 0) {
+    t = Math.round(t);
+  }
+  let d = DayJs.duration(t);
   let duration_str = "";
   let m = d.minutes();
   let s = d.seconds();

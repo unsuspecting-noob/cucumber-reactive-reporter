@@ -5,8 +5,7 @@ Parses output of cucumberjs
 provides filtering via tags ans status and few other things.</b>
 <br>
 ### Why another reporter? ###
-<b>The main motivation behind this project was the need to control various data attachments and how they show up in reports.
-Existing libraries gave very sandboxy and limited options for things like attaching a custom html line to the report.
+<b>The main motivation behind this project was the desire for a more dynamic experience as well as the need to get more control over various data attachments and how they are displayed.
 
 Here are some of the things that were deemed important to implement in this reporter:
 </b>
@@ -80,3 +79,4 @@ links: {
 | 1.0.6 | Added pagination to the main feature screen, shows up if above 50 |
 | 1.0.7 | Changed feature pagination to be always on if above 10 elements, the reason why is you can change to display 10 at a time to force single column|
 | 1.0.8 | Fixed json parsing error for newer cucumber version, where Before and After steps do not provide code line info|
+| 1.0.9 | Fixed displayed step duration in newer versions of cucumber|
