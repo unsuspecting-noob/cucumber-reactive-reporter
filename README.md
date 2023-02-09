@@ -36,7 +36,12 @@ let metadata = {
     "additional key": "value",
     "more keys": "value"
 };
+let linkTags = [{
+         "pattern": "[a-zA-Z]*-(\\d)*$",
+         "link": "https://my.jira.server/browse/"
+    }];
 options.metadata = metadata;
+options.linkTags = linkTags;
 (async () => {
     await Reporter.generate("mytest/cucumber-output.json", "htmlOutputFolder/", options);
 })();
@@ -51,22 +56,9 @@ options.metadata = metadata;
     * ```(@catfacts or @image) and not @1_tag```
 ## TODOs and ideas for improvement:
 
-1. consider adding hooks for linking to jira the way allure does it: 
-```
-links: {
-          issue: {
-            pattern: [/@issue=(.*)/],
-            urlTemplate: "http://localhost:8080/issue/%s"
-          },
-          tms: {
-            pattern: [/@tms=(.*)/],
-            urlTemplate: "http://localhost:8080/tms/%s"
-          }
-        }
-```
-2. patch more settings for intial render (before/after toggle, theme, filter etc.)
-3. handle state "ambiguous" (probably lump em with errors), generate one when there are two test definitions with similar regex
-4. Figure out a strategy for handling combined reports (from parallel runs)
+1. patch more settings for intial render (before/after toggle, theme, filter etc.)
+2. handle state "ambiguous" (probably lump em with errors), generate one when there are two test definitions with similar regex
+3. Figure out a strategy for handling combined reports (from parallel runs)
 
 ### Release notes
 
@@ -80,3 +72,4 @@ links: {
 | 1.0.7 | Changed feature pagination to be always on if above 10 elements, the reason why is you can change to display 10 at a time to force single column|
 | 1.0.8 | Fixed json parsing error for newer cucumber version, where Before and After steps do not provide code line info|
 | 1.0.9 | Fixed displayed step duration in newer versions of cucumber|
+| 1.0.10 | New reporter option to convert some tags to custom links|

@@ -1,5 +1,5 @@
 import { Badge, Box, Card, CardActionArea, CardContent, CardHeader, Collapse, Divider, Stack, Typography } from "@mui/material";
-import { FeaturesToggleValuesEnum, getFeaturesToggleValue } from "../store/uistates";
+import { FeaturesToggleValuesEnum, getFeaturesToggleValue, getSettings } from "../store/uistates";
 import { cyan, green, purple, red, yellow } from '@mui/material/colors';
 import {
   getFeatureById,
@@ -41,6 +41,8 @@ const FeatureContainer = (props) => {
   };
 
   const st = useSelector((state) => getFeaturesToggleValue(state, props));
+  const settings = useSelector((state) => getSettings(state, props));
+
   let failedScenariosArr = useSelector((state) =>
     getNumberOfFailedScenariosByFeatureId(state, props));
   let passedScenariosArr = useSelector((state) =>
@@ -50,6 +52,7 @@ const FeatureContainer = (props) => {
   let passedScenarios = passedScenariosArr.length;
   let failedScenarios = failedScenariosArr.length;
   let skippedScenarios = skippedScenariosArr.length;
+
   switch (st) {
     case FeaturesToggleValuesEnum.ALL:
       break;
@@ -77,8 +80,30 @@ const FeatureContainer = (props) => {
     border: "2px solid",
     borderColor: theme.palette.divider
   }));
+  //deal with purple tags in subheader, convert jira like ones to links
   let tagArr = tags.map((t) => t.name);
-
+  let taglinks = [];
+  tags.forEach(element => {
+    let e = {};
+    e.name = element.name;
+    e.line = element.line;
+    taglinks.push(e);
+  });
+  if (settings.linkTags && settings.linkTags.length) {
+    for (let rule of settings.linkTags) {
+      let re = new RegExp(rule.pattern);
+      //apply link to each matching tag
+      if (taglinks.length) {
+        for (let i in taglinks) {
+          let matchedIndex = taglinks[i].name.search(re);
+          if (matchedIndex !== -1) {
+            taglinks[i].link = `${rule.link}${taglinks[i].name.substring(matchedIndex)}`;
+          }
+        }
+      }
+    }
+  }
+  let tagkey = 0;
   return (
     <Item raised={expanded ? true : false} >
       <CardActionArea
@@ -111,7 +136,13 @@ const FeatureContainer = (props) => {
           }}
           subheader={
             <Stack direction="column" justifyContent="flex-start">
-              <Typography variant="capture" align="left" style={{ marginLeft: "1vw", minHeight: "1vh", fontStyle: "italic", fontSize: "1.3vmin", fontWeight: "bold", color: purple[400] }}>{tagArr.join(" ")}</Typography>
+              <Typography variant="capture" align="left" style={{ marginLeft: "1vw", minHeight: "1vh", fontStyle: "italic", fontSize: "1.3vmin", fontWeight: "bold", color: purple[400] }}>
+                <Stack direction="row" spacing="10px">
+                  {taglinks.map((tag) => (
+                    tag.link ? <a href={tag.link} key={tagkey++}>{tag.name}</a> : <div key={tagkey++}>{tag.name}</div>)
+                  )}
+                </Stack>
+              </Typography>
               <Typography variant="capture" align="left" style={{ marginLeft: "1vw", minHeight: "1vh", fontStyle: "italic", fontSize: "1.3vmin", color: purple[200] }}>{uri}</Typography>
             </Stack>
           }

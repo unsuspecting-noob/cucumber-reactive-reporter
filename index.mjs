@@ -1,5 +1,6 @@
 // import { createRequire } from 'module';
 import fs from "fs";
+import { link } from "fs/promises";
 import ncp from "ncp";
 import path from "path";
 import ut from "util";
@@ -56,11 +57,17 @@ const generate = async (source, dest, options) => {
     const SETTINGS_JSON_PATH = "_reporter_settings.json";
     const HTML_PATH = path.join(path.dirname(modulePath), "react");
 
+    // "linkTags": [{
+    //     "pattern": "[a-zA-Z]*-(\\d)*$",
+    //     "link": "https://bydeluxe.atlassian.net/browse/"
+
+    // }]
     //defaults
     const {
         title = "Cucumber Report", //report page title
         description = "Cucumber report", //description to be set at the page header
-        metadata = {}
+        metadata = {},
+        linkTags = null
     } = options;
 
     let __dirname = path.resolve();
@@ -84,7 +91,8 @@ const generate = async (source, dest, options) => {
         `destination: ${dest}\n` +
         `title: ${title}\n` +
         `description: ${description}\n` +
-        `metadata: ${ut.inspect(metadata, false, null)}\n`);
+        `metadata: ${ut.inspect(metadata, false, null)}\n` +
+        `linkTags: ${ut.inspect(linkTags, false, null)}\n`);
 
     //validate input json and make a copy
     let str = fs.readFileSync(source).toString();

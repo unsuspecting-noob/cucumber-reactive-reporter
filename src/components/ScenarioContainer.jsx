@@ -1,6 +1,6 @@
 import { Box, Card, CardActionArea, CardContent, CardHeader, Collapse, Stack, Typography } from "@mui/material";
 import { blue, cyan, green, purple, red, yellow } from '@mui/material/colors';
-import { getBoiler, getScenarioContainerCollapsed, getTheme, scenarioContainerClicked } from "../store/uistates";
+import { getBoiler, getScenarioContainerCollapsed, getSettings, getTheme, scenarioContainerClicked } from "../store/uistates";
 import {
   getFailedStepsByScenarioId,
   getPassedStepsByScenarioId,
@@ -38,7 +38,7 @@ const ScenarioContainer = (props) => {
 
   let collapse = useSelector((state) => getScenarioContainerCollapsed(state, props));
   if (collapse === undefined) collapse = true; //dealing with the fact that our default state is not filled in since we track scenario ui state only after someone clicks it
-
+  const settings = useSelector((state) => getSettings(state, props));
   const handleClick = () => {
     dispatch(scenarioContainerClicked({ id: id }));
   };
@@ -61,6 +61,29 @@ const ScenarioContainer = (props) => {
     borderColor: theme.palette.divider,
     backgroundColor: themeName === "dark" ? null : '#d4d4d4'
   }));
+
+  let taglinks = [];
+  displayedTagsArr.forEach(element => {
+    let e = {};
+    e.name = element;
+    taglinks.push(e);
+  });
+  if (settings.linkTags && settings.linkTags.length) {
+    for (let rule of settings.linkTags) {
+      let re = new RegExp(rule.pattern);
+      //apply link to each matching tag
+      if (taglinks.length) {
+        for (let i in taglinks) {
+          let matchedIndex = taglinks[i].name.search(re);
+          if (matchedIndex !== -1) {
+            taglinks[i].link = `${rule.link}${taglinks[i].name.substring(matchedIndex)}`;
+          }
+        }
+      }
+    }
+    console.dir(taglinks, { depth: null });
+  }
+  let tagkey = 0;
 
   return (
     <React.Fragment>
@@ -89,7 +112,13 @@ const ScenarioContainer = (props) => {
             titleTypographyProps={{ color: nameColor, marginLeft: "1vw", fontSize: "1.7vmin", textAlign: "left" }}
             subheader={
               <Stack direction="column" justifyContent="flex-start">
-                <Typography variant="capture" align="left" style={{ marginLeft: "1vw", minHeight: "1vh", fontStyle: "italic", fontSize: "1.3vmin", fontWeight: "bold", color: purple[400] }}>{displayedTagsArr.join(" ")}</Typography>
+                <Typography variant="capture" align="left" style={{ marginLeft: "1vw", minHeight: "1vh", fontStyle: "italic", fontSize: "1.3vmin", fontWeight: "bold", color: purple[400] }}>
+                  <Stack direction="row" spacing="10px">
+                    {taglinks.map((tag) => (
+                      tag.link ? <a href={tag.link} key={tagkey++}>{tag.name}</a> : <div key={tagkey++}>{tag.name}</div>)
+                    )}
+                  </Stack>
+                </Typography>
               </Stack>
             }
           />
