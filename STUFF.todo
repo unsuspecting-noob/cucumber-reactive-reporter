@@ -1,2 +1,5 @@
 add ability to reorder pagination to show errors first
 add this to generation part https://www.npmjs.com/package/@cucumber/cucumber-json-converter
+convert sample link on readme page to a link with preview so its more apparent that there is a sample to try
+
+add jenkins plugin to track history of runs
