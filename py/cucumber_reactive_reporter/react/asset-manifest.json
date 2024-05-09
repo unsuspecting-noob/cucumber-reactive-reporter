@@ -1,0 +1,26 @@
+{
+  "files": {
+    "main.css": "./static/css/main.css",
+    "main.js": "./static/js/main.js",
+    "runtime-main.js": "./static/js/runtime-main.js",
+    "static/css/2.css": "./static/css/2.css",
+    "static/js/2.js": "./static/js/2.js",
+    "index.html": "./index.html",
+    "precache-manifest.js": "./precache-manifest.js",
+    "service-worker.js": "./service-worker.js",
+    "static/js/2.js.LICENSE.txt": "./static/js/2.js.LICENSE.txt",
+    "static/js/main.js.LICENSE.txt": "./static/js/main.js.LICENSE.txt",
+    "static/media/font-awesome.css": "./static/media/fontawesome-webfont.woff",
+    "static/media/300.css": "./static/media/roboto-vietnamese-300-normal.woff2",
+    "static/media/400.css": "./static/media/roboto-vietnamese-400-normal.woff2",
+    "static/media/500.css": "./static/media/roboto-vietnamese-500-normal.woff2",
+    "static/media/700.css": "./static/media/roboto-vietnamese-700-normal.woff2"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.js",
+    "static/css/2.css",
+    "static/js/2.js",
+    "static/css/main.css",
+    "static/js/main.js"
+  ]
+}

@@ -11,7 +11,7 @@
 # production
 #this is where react-scripts compile stuff, and where the development server runs from
 /build
-#this is what gets published 
+#this is what gets published
 /dist
 #this is generated for testing reporter.generate() function with some sample cucumber json
 /test
@@ -33,3 +33,9 @@ public/cucumber-results.json
 public/packaging
 yarn.lock
 package-lock.json
+
+#python
+
+__pycache__
+.venv
+*.egg-info
