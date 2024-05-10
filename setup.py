@@ -10,6 +10,7 @@ def package_files(directory):
     return paths
 
 extra_files = package_files('react')
+print(extra_files)
 setup(
     name='cucumber_reactive_reporter',
     version=__version__,
