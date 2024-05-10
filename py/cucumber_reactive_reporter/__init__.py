@@ -1,1 +1,1 @@
-from cucumber_reactive_reporter import *
+from . import *
