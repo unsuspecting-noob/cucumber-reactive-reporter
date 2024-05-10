@@ -2,7 +2,7 @@
 
 <b>Cucumber report library based on react-redux and @mui
 Parses output of cucumberjs
-provides filtering via tags ans status and few other things.</b>
+provides filtering via tags and status and few other things.</b>
 <br>
 ### Why another reporter? ###
 <b>The main motivation behind this project was the desire for a more dynamic experience as well as the need to get more control over various data attachments and how they are displayed.
