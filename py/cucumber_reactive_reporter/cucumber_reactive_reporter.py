@@ -24,8 +24,7 @@ OPTIONS = {}
 
 def copy_resources(resource_dir, destination_directory):
     # Access the package's resources
-    package_files = impresources.files(resource_dir)
-
+    package_files = impresources.files('cucumber_reactive_reporter').joinpath(resource_dir)
     # Recursive function to copy resources
     def copy_resource(resource, dest_dir):
         destination_path = os.path.join(dest_dir, resource.name)

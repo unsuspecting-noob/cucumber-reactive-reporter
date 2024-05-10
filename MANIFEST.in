@@ -1,2 +1,1 @@
-recursive-include py/cucumber_reactive_reporter *
-exclude py/cucumber_reactive_reporter/icon
+recursive-include py/cucumber_reactive_reporter/react *
