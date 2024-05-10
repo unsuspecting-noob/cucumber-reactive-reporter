@@ -3,7 +3,7 @@ import os
 import shutil
 from pathlib import Path
 from importlib import resources as impresources
-
+import base64
 
 # from . import react
 
@@ -114,42 +114,156 @@ def prep_data_for_store(data):
     state = {
         'features': {'list': [], 'featuresMap': {}},
         'scenarios': {'list': [], 'scenariosMap': {}},
-        'steps': {'stepsMap': {}, 'total_duration_nano_sec': 0}
+        'steps': {'stepsMap': {}, 'totalDurationNanoSec': 0}
     }
+
+
     feature_index = 0
     for feature in data:
-        feature_id = f"{feature_index}_{feature['name'].replace(' ', '_')}"
-        process_feature(state, feature, feature_id)
+        featureId = f"{feature_index}_{feature['name'].replace(' ', '_')}"
+        _process_feature(state, feature, featureId)
         feature_index += 1
+        # SCENARIO
+        num_scenarios = len(feature['elements'])  # avoid multiple lookups
+        if feature['elements'] and num_scenarios:
+            sc_index = 0
+            for sc in feature['elements']:
+                # need to make scenario id unique as well
+                #it will consist of featureId and scenario_index plus scenario name
+                sc_index += 1
+                sc_id_arr = [featureId, str(sc_index), sc['name']]
+                sc['id'] = ';'.join(sc_id_arr)
+                _process_scenario(state, featureId, sc)
+                # STEPS
+                for st in sc['steps']:
+                    _process_step(state, sc['id'], st)
     return state
 
+def _convert_tags(tags):
+    return [{'name': f"@{tag}"} for tag in tags]
 
-def process_feature(state, feature, feature_id):
-    all_tags =feature['tags'].copy()
-    num_failed_scenarios = sum(
-        1 for element in feature['elements'] if any(
-            step['result']['status'] == 'failed' for step in element['steps']
-        )
-    )
-    num_skipped_scenarios = sum(
-        1 for element in feature['elements'] if any(
-            step['result']['status'] == 'skipped' for step in element['steps']
-        )
-    )
-    state['features']['list'].append(feature_id)
-    state['features']['featuresMap'][feature_id] = {
-        'id': feature_id,
+def _process_feature(state, feature, featureId):
+    allTags = feature['tags'].copy()
+    #figure out if it has failed stuff
+    numFailedScenarios = 0
+    numSkippedScenarios = 0
+    if feature['elements'] and len(feature['elements']):
+        for el in feature['elements']:
+            # Collect scenario tags
+            if el['tags'] and len(el['tags']):
+                temp =_convert_tags(el['tags'])
+                #merge with allTags
+                for tag in temp:
+                    if tag not in allTags:
+                        allTags.append(tag)
+            # Process scenario steps
+            if el['steps'] and len(el['steps']):
+                for step in el['steps']:
+                    if step['result'] and step['result']['status'] == 'failed':
+                        numFailedScenarios += 1
+                        break
+                    if step['result'] and step['result']['status'] == 'skipped':
+                        numSkippedScenarios += 1
+                        break
+
+
+    state['features']['list'].append(featureId)
+    state['features']['featuresMap'][featureId] = {
+        'id': featureId,
         'description': feature['description'][0] if (hasattr(feature['description'], '__len__') == True) else feature['description'],
-        # 'description': feature.get('description', ''),
         'uri': feature.get('uri', ''),
         'keyword': feature.get('keyword', ''),
         'name': feature.get('name', ''),
         'line': feature.get('line', ''),
         'tags': feature.get('tags', []),
-        'allTags': all_tags,
-        'num_failed_scenarios': num_failed_scenarios,
-        'num_skipped_scenarios': num_skipped_scenarios
+        'allTags': allTags,
+        'numFailedScenarios': numFailedScenarios,
+        'numSkippedScenarios': numSkippedScenarios
     }
+    
+
+def _process_scenario(state, featureId, scenario):
+    # Destructuring equivalent in Python using direct key access from dictionary
+    scenarioId = scenario['id']
+    keyword = scenario['keyword']
+    line = 0
+    name = scenario['name']
+    tags = _convert_tags(list(scenario['tags']))  # Creates a copy of the tags list, convert to reporter format
+    scenarioType = scenario['type']
+
+    # Updating the state dictionary
+    # Append scenario id to the scenarios list
+    state['scenarios']['list'].append(scenarioId)
+    
+    # Add or update the scenario details in scenariosMap
+    state['scenarios']['scenariosMap'][scenarioId] = {
+        'failedSteps': 0,
+        'featureId': featureId,
+        'id': scenarioId,
+        'keyword': keyword,
+        'line': line,
+        'name': name,
+        'passedSteps': 0,
+        'skippedSteps': 0,
+        'tags': tags,
+        'type': scenarioType,
+        'uri': None
+    }
+
+def _process_step(state, scenarioId, st):
+    # Direct dictionary key access to mimic JavaScript destructuring
+    args = st.get('args', [])
+    embeddings = st.get('embeddings', [])
+    #decode text stuff from base64
+    for emb in embeddings:
+        if 'text' in emb['mime_type']:
+            emb['data'] = base64.b64decode(emb['data']).decode('utf-8')
+    hidden = st.get('hidden', False)
+    keyword = st['keyword']
+    line = 0
+    location = st['location']
+    name = st['name']
+    duration = st['result']['duration']
+    error_message = st['result'].get('error_message', None)
+    status = st['result']['status']
+
+    # Check if 'match' exists and get location if available
+    location = st['match']['location'] if 'match' in st and 'location' in st['match'] else ""
+
+    # Create step dictionary
+    step = {
+        'args': args,
+        'duration': duration,
+        'embeddings': embeddings,
+        'error_message': error_message,
+        'keyword': keyword,
+        'line': line,
+        'location': location,
+        'name': name,
+        'status': status
+    }
+
+    # Ensure the scenarioId exists in stepsMap and initialize if not
+    if scenarioId not in state['steps']['stepsMap']:
+        state['steps']['stepsMap'][scenarioId] = {'steps': []}
+    
+    # Add the step to the steps list for the scenario
+    state['steps']['stepsMap'][scenarioId]['steps'].append(step)
+    
+    # Update total duration if duration is not NaN
+    if not isinstance(duration, str):  # Check if duration is not a string
+        state['steps']['totalDurationNanoSec'] += duration
+
+    # Update counts based on step status if not hidden or if there are embeddings
+    if not hidden or (embeddings and len(embeddings) > 0):
+        if status == 'passed':
+            state['scenarios']['scenariosMap'][scenarioId]['passedSteps'] += 1
+        elif status == 'skipped':
+            state['scenarios']['scenariosMap'][scenarioId]['skippedSteps'] += 1
+
+    # Increment the failed steps counter if the status is 'failed'
+    if status == 'failed':
+        state['scenarios']['scenariosMap'][scenarioId]['failedSteps'] += 1
 
 if __name__ == '__main__':
     cmd_generate()
