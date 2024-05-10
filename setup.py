@@ -11,6 +11,7 @@ def package_files(directory):
 
 extra_files = package_files('react')
 setup(
+    print('Running setup, version:', __version__),
     name='cucumber_reactive_reporter',
     version=__version__,
     url='https://github.com/unsuspecting-noob/cucumber-reactive-reporter',

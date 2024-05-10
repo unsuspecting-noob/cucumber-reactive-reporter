@@ -1,1 +1,0 @@
-from .cucumber_reactive_reporter import generate
