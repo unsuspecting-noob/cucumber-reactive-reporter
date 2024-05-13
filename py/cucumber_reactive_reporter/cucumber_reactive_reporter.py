@@ -222,9 +222,15 @@ def _process_step(state, scenarioId, st):
     line = 0
     location = st['location']
     name = st['name']
-    duration = st['result']['duration']
-    error_message = st['result'].get('error_message', None)
-    status = st['result']['status']
+    result = st.get('result')
+    duration = 0
+    error_message = None
+    status = None
+    if result:
+        duration = result.get('duration', 0)
+        if hasattr(error_message, "__len__") == True:
+            error_message = '\n'.join(error_message)
+        status = result.get('status', None)
 
     # Check if 'match' exists and get location if available
     location = st['match']['location'] if 'match' in st and 'location' in st['match'] else ""
