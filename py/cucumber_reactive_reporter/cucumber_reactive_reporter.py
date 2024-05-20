@@ -167,9 +167,13 @@ def _process_feature(state, feature, featureId):
 
 
     state['features']['list'].append(featureId)
+    desc = feature.get('description', [])
+    if (isinstance(desc, str) == False) and desc.size:
+        print(f"desc {desc}")
+        desc = desc[0]
     state['features']['featuresMap'][featureId] = {
         'id': featureId,
-        'description': feature['description'][0] if (hasattr(feature['description'], '__len__') == True) else feature['description'],
+        'description': desc,
         'uri': feature.get('uri', ''),
         'keyword': feature.get('keyword', ''),
         'name': feature.get('name', ''),
@@ -213,14 +217,27 @@ def _process_step(state, scenarioId, st):
     # Direct dictionary key access to mimic JavaScript destructuring
     args = st.get('args', [])
     embeddings = st.get('embeddings', [])
-    #decode text stuff from base64
+    #decode text stuff from base64, todo: handle image
     for emb in embeddings:
-        if 'text' in emb['mime_type']:
-            emb['data'] = base64.b64decode(emb['data']).decode('utf-8')
+            #pytest output
+            if emb.get('type',''):
+                if 'image' in emb.get('type',""):
+                    print("image, skipping decode...")
+            else:
+                #not pytest
+                if not emb.get('source'):
+                    emb['data'] = base64.b64decode(emb['data']).decode('utf-8')
+            if emb.get(type,''):
+                emb['mime_type'] = emb['type']
     hidden = st.get('hidden', False)
     keyword = st['keyword']
     line = 0
-    location = st['location']
+    location = ""
+    if hasattr(st, 'match'):
+        if hasattr(st['match'], 'location'):
+            location = st['match']['location']
+    else:
+        location = st.get('location', "")
     name = st['name']
     result = st.get('result')
     duration = 0
