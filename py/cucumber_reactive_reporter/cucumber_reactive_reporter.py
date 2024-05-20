@@ -247,6 +247,8 @@ def _process_step(state, scenarioId, st):
         duration = result.get('duration', 0)
         if hasattr(error_message, "__len__") == True:
             error_message = '\n'.join(error_message)
+        else:
+            error_message = result.get('error_message', "")
         status = result.get('status', None)
 
     # Check if 'match' exists and get location if available
