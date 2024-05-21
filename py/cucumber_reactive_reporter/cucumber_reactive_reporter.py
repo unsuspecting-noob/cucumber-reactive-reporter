@@ -139,7 +139,17 @@ def prep_data_for_store(data):
     return state
 
 def _convert_tags(tags):
-    return [{'name': f"@{tag}"} for tag in tags]
+    print(f"tags {tags}")
+    ret = []
+    for tag in tags:
+        if tag.get('name'):
+            if tag['name'].startswith('@') == False:
+                tag['name']=f"@{tag['name']}"
+            print(f"tag {tag}")
+            ret.append(tag)
+        else:
+            ret.append({'name': f"@{tag}"})     
+    return ret
 
 def _process_feature(state, feature, featureId):
     allTags = feature['tags'].copy()
@@ -178,12 +188,18 @@ def _process_feature(state, feature, featureId):
         'keyword': feature.get('keyword', ''),
         'name': feature.get('name', ''),
         'line': feature.get('line', ''),
-        'tags': feature.get('tags', []),
+        'tags': _convert_tags(feature.get('tags', [])),
         'allTags': allTags,
         'numFailedScenarios': numFailedScenarios,
         'numSkippedScenarios': numSkippedScenarios
     }
     
+
+def _dictListUpdate( lis1, lis2):
+    for aLis1 in lis1:
+        if aLis1 not in lis2:
+            lis2.append(aLis1)
+    return lis2
 
 def _process_scenario(state, featureId, scenario):
     # Destructuring equivalent in Python using direct key access from dictionary
@@ -192,7 +208,12 @@ def _process_scenario(state, featureId, scenario):
     line = 0
     name = scenario['name']
     tags = _convert_tags(list(scenario['tags']))  # Creates a copy of the tags list, convert to reporter format
+    for tag in tags:
+        if tag not in state['features']['featuresMap'][featureId]['allTags']:
+            state['features']['featuresMap'][featureId]['allTags'].append(tag)
     scenarioType = scenario['type']
+    #add feature tags to scenario, this is to make sure tag search functions correctly
+    tags = _dictListUpdate(state['features']['featuresMap'][featureId]['tags'], tags)
 
     # Updating the state dictionary
     # Append scenario id to the scenarios list
