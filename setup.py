@@ -22,4 +22,9 @@ setup(
     include_package_data=True,
     zip_safe=False,
     package_data={'cucumber_reactive_reporter': extra_files},
+    entry_points={
+        'console_scripts': [
+            'cucumber_reactive_reporter=cucumber_reactive_reporter:cmd_generate'
+        ]
+    }
 )
