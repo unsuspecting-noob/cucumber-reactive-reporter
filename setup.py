@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 from py.cucumber_reactive_reporter.cucumber_reactive_reporter import __version__
 import os
 
@@ -17,14 +17,14 @@ setup(
     url='https://github.com/unsuspecting-noob/cucumber-reactive-reporter',
     author='unsuspecting-noob',
     author_email='nikolai.i.popov@gmail.com',
-    packages=['cucumber_reactive_reporter'],
+    packages=find_packages(),
     package_dir={'cucumber_reactive_reporter': 'py/cucumber_reactive_reporter'},
     include_package_data=True,
     zip_safe=False,
     package_data={'cucumber_reactive_reporter': extra_files},
     entry_points={
         'console_scripts': [
-            'cucumber_reactive_reporter=cucumber_reactive_reporter:cmd_generate'
+            'cucumber_reactive_reporter=cucumber_reactive_reporter:main'
         ]
     }
 )
