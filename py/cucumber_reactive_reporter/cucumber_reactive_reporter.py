@@ -139,13 +139,11 @@ def prep_data_for_store(data):
     return state
 
 def _convert_tags(tags):
-    print(f"tags {tags}")
     ret = []
     for tag in tags:
         if tag.get('name'):
             if tag['name'].startswith('@') == False:
                 tag['name']=f"@{tag['name']}"
-            print(f"tag {tag}")
             ret.append(tag)
         else:
             ret.append({'name': f"@{tag}"})     
@@ -242,7 +240,6 @@ def _process_step(state, scenarioId, st):
     for emb in embeddings:
         if 'data' in emb:
             if emb.get('type'):
-                print("setting mime")
                 emb['mime_type'] = emb['type']
             if emb.get('mime_type') == None:
                 #default
