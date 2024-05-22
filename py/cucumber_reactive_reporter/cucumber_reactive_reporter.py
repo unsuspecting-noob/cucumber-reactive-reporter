@@ -239,13 +239,11 @@ def _process_step(state, scenarioId, st):
     #decode text stuff from base64, todo: handle image
     for emb in embeddings:
         if 'data' in emb:
-            if emb.get('type'):
-                emb['mime_type'] = emb['type']
             if emb.get('mime_type') == None:
                 #default
                 emb['mime_type'] = 'text/plain'
             #pytest output
-            if 'image' in emb.get('mime_type') and 'image' in emb.get('type'):
+            if 'image' in emb.get('mime_type') and emb.get('source'):
                     print("image, skipping decode for pytest...")
             else:
                 #not pytest
