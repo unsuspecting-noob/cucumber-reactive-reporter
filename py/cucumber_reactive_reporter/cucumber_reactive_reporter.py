@@ -141,6 +141,11 @@ def prep_data_for_store(data):
 def _convert_tags(tags):
     ret = []
     for tag in tags:
+        if isinstance(tag, str):
+            if tag.startswith('@') == False:
+                tag = f"@{tag}"
+            ret.append({'name': tag})
+            continue
         if tag.get('name'):
             if tag['name'].startswith('@') == False:
                 tag['name']=f"@{tag['name']}"
@@ -180,7 +185,7 @@ def _process_feature(state, feature, featureId):
 
     state['features']['list'].append(featureId)
     desc = feature.get('description', [])
-    if (isinstance(desc, str) == False) and desc.size:
+    if (isinstance(desc, str) == False) and len(desc):
         print(f"desc {desc}")
         desc = desc[0]
     state['features']['featuresMap'][featureId] = {
@@ -214,7 +219,6 @@ def _process_scenario(state, featureId, scenario):
             if res:
                 if res.get('status', None) == None:
                     return
-    #deal with the "normal" non-repeated scenario           
     scenarioId = scenario['id']
     keyword = scenario['keyword']
     line = 0
