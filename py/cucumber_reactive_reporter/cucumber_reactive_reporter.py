@@ -166,6 +166,10 @@ def _process_feature(state, feature, featureId):
             # Process scenario steps
             if el['steps'] and len(el['steps']):
                 for step in el['steps']:
+                    res = step.get('result', None)
+                    if res:
+                        if res.get('status', None) == None:
+                            continue
                     if step['result'] and step['result']['status'] == 'failed':
                         numFailedScenarios += 1
                         break
@@ -200,7 +204,17 @@ def _dictListUpdate( lis1, lis2):
     return lis2
 
 def _process_scenario(state, featureId, scenario):
-    # Destructuring equivalent in Python using direct key access from dictionary
+    # we need to deal with reruns, in case of a rerun scenario it will appear in pytest output json
+    #with steps that are missing result.status, eventually when repeats are exausted there will be a scenario
+    #with complete info, so we are gonna skip scenarios that have steps with no results as we dont want to see them in 
+    #the report
+    if scenario['steps'] and len(scenario['steps']):
+        for st in scenario['steps']:
+            res = st.get('result', None)
+            if res:
+                if res.get('status', None) == None:
+                    return
+    #deal with the "normal" non-repeated scenario           
     scenarioId = scenario['id']
     keyword = scenario['keyword']
     line = 0
