@@ -1,14 +1,24 @@
 {
   "name": "cucumber-reactive-reporter",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "A filterable html report generator for cucumberjs written in react",
   "private": false,
   "homepage": "https://github.com/unsuspecting-noob/cucumber-reactive-reporter",
   "main": "dist/cucumber-reactive-reporter.cjs.js",
   "module": "dist/cucumber-reactive-reporter.esm.js",
-  "files": ["dist/*.js", "dist/react/**/*", "dist/package.json"],
+  "files": [
+    "dist/*.js",
+    "dist/react/**/*",
+    "dist/package.json"
+  ],
   "repository": "github.com:unsuspecting-noob/cucumber-reactive-reporter.git",
-  "keywords": ["cucumber", "cucumberjs", "html", "report", "reporter"],
+  "keywords": [
+    "cucumber",
+    "cucumberjs",
+    "html",
+    "report",
+    "reporter"
+  ],
   "license": "MIT",
   "scripts": {
     "start": "PUBLIC_URL=./ react-scripts start",
