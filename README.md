@@ -29,7 +29,10 @@ $ npm install cucumber-reactive-reporter
 import Reporter from "cucumber-reactive-reporter";
 let options = {
     "title": "Cucumber reactive reporter sample",
-    "description": "... test suite description"
+    "description": "... test suite description",
+    "inputFormat": "legacy-json",
+    "attachmentsEncoding": "auto",
+    "cucumberVersion": "12.5.0"
 };
 let metadata = {
     "some key": "value",
@@ -46,6 +49,15 @@ options.linkTags = linkTags;
     await Reporter.generate("mytest/cucumber-output.json", "htmlOutputFolder/", options);
 })();
 ```
+
+### Options
+
+- `inputFormat`: `legacy-json` (default) or `auto`.
+- `attachmentsEncoding`: `auto` (default), `base64`, or `raw`.
+  - Use `raw` if your cucumber JSON stores text attachments unencoded.
+  - Use `base64` if text attachments are base64 encoded.
+  - `auto` decodes base64-looking text attachments.
+- `cucumberVersion`: optional version hint to pick attachment decoding behavior.
 
 ### See sample in action:
 [link](https://unsuspecting-noob.github.io/cucumber-reactive-reporter/index.html)

@@ -22,6 +22,7 @@
     "pretestinstall": "rm -rf test",
     "testinstall": "node devtest.mjs && touch test/.nojekyll",
     "test": "react-scripts test",
+    "test:node": "node --test",
     "eject": "react-scripts eject"
   },
   "dependencies": {
