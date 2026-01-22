@@ -90,6 +90,18 @@ const decodeBase64Text = (value) => {
   return decoded;
 };
 
+const formatJsonText = (value) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(value);
+    return JSON.stringify(parsed, null, 2);
+  } catch (err) {
+    return null;
+  }
+};
+
 const normalizeEmbeddings = (embeddings, { attachmentsEncoding }) => {
   if (!Array.isArray(embeddings)) {
     return embeddings;
@@ -103,10 +115,16 @@ const normalizeEmbedding = (embedding, { attachmentsEncoding }) => {
   if (!embedding || typeof embedding !== "object") {
     return embedding;
   }
+  const mimeType = normalizeMimeType(embedding.mime_type ?? embedding.media?.type);
   if (attachmentsEncoding === "raw") {
+    if (mimeType === "application/json" && typeof embedding.data === "string") {
+      const formatted = formatJsonText(embedding.data);
+      if (formatted) {
+        return { ...embedding, data: formatted };
+      }
+    }
     return embedding;
   }
-  const mimeType = normalizeMimeType(embedding.mime_type ?? embedding.media?.type);
   if (!shouldDecodeEmbedding(mimeType)) {
     return embedding;
   }
@@ -119,11 +137,11 @@ const normalizeEmbedding = (embedding, { attachmentsEncoding }) => {
     return embedding;
   }
   if (mimeType === "application/json") {
-    try {
-      JSON.parse(decoded);
-    } catch (err) {
+    const formatted = formatJsonText(decoded);
+    if (!formatted) {
       return embedding;
     }
+    return { ...embedding, data: formatted };
   } else if (["application/xml", "text/xml", "text/html"].includes(mimeType)) {
     if (!decoded.includes("<")) {
       return embedding;
