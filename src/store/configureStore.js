@@ -13,7 +13,7 @@ export default async function () {
   let preloadedState;
   try {
     console.time("loadJSON")
-    let response = await fetch("./_cucumber-results.json");
+    let response = await fetch("./_cucumber-results.json", { cache: "no-store" });
     preloadedState = await response.json();
     console.timeEnd("loadJSON")
   } catch (err) {
@@ -21,12 +21,24 @@ export default async function () {
     //not sure
   }
 
-  let reducer = combineReducers({
+  let appReducer = combineReducers({
     features: featuresReducer(preloadedState.features),
     scenarios: scenariosReducer,
     states: stateReducer,
     steps: stepsReducer
   });
+  let reducer = (state, action) => {
+    if (action.type === "reporter/stateReplaced") {
+      const nextState = action.payload ?? {};
+      return {
+        ...state,
+        features: nextState.features ?? state.features,
+        scenarios: nextState.scenarios ?? state.scenarios,
+        steps: nextState.steps ?? state.steps
+      };
+    }
+    return appReducer(state, action);
+  };
   return configureStore({
     reducer,
     // middleware: [...getDefaultMiddleware(), logger(), loader], //getDefaultMiddleware comes with thunk

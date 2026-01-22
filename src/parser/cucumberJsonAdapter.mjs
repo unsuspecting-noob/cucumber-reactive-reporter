@@ -2,23 +2,27 @@
  * Purpose: Normalize cucumber JSON into reporter store state.
  * Responsibilities:
  * - Normalize legacy cucumber JSON to a stable feature/scenario/step shape.
+ * - Route message-stream envelopes to the message adapter when configured.
  * - Build feature, scenario, and step maps for the UI store.
  * Inputs/Outputs: Accepts parsed cucumber JSON; returns store-shaped state.
- * Invariants: Input must be legacy JSON (features/elements/steps).
+ * Invariants: Input must be legacy JSON (features/elements/steps) or message envelopes.
  * See: /agents.md
  */
 
+import { prepareStoreStateFromMessages } from "./cucumberMessageAdapter.mjs";
+
 const LEGACY_FORMAT_HELP = [
   "Unsupported cucumber output format.",
-  "This reporter expects legacy JSON (features/elements/steps).",
-  "If you are using the message formatter, rerun with --format json:<file> or",
-  'use inputFormat: "auto" to detect message output.'
+  "This reporter expects legacy JSON (features/elements/steps) or message NDJSON.",
+  'Use inputFormat: "message" for --format message:<file> output.',
+  'Use inputFormat: "legacy-json" for --format json:<file> output.'
 ].join(" ");
 
 const INPUT_FORMAT_HELP = [
-  'inputFormat must be "legacy-json" or "auto".',
+  'inputFormat must be "legacy-json", "message", or "auto".',
   'Use "legacy-json" for --format json:<file> output.',
-  'Use "auto" to detect and reject message formatter output explicitly.'
+  'Use "message" for --format message:<file> output.',
+  'Use "auto" to detect message output automatically.'
 ].join(" ");
 
 const ATTACHMENTS_ENCODING_HELP = [
@@ -184,7 +188,7 @@ const parseCucumberMajor = (cucumberVersion) => {
  * Convert cucumber JSON into the reporter store shape.
  * @param {unknown} input parsed cucumber JSON
  * @returns {Object} normalized state for the UI store
- * @throws {Error} when input is not legacy cucumber JSON
+ * @throws {Error} when input is not legacy cucumber JSON or message envelopes
  * @example
  * const state = prepareStoreState(legacyJsonArray);
  */
@@ -196,12 +200,16 @@ export const prepareStoreState = (
     cucumberVersion
   } = {}
 ) => {
-  if (!["legacy-json", "auto"].includes(inputFormat)) {
+  if (!["legacy-json", "message", "auto"].includes(inputFormat)) {
     throw new Error(INPUT_FORMAT_HELP);
   }
 
+  if (inputFormat === "message") {
+    return prepareStoreStateFromMessages(input, { attachmentsEncoding });
+  }
+
   if (inputFormat === "auto" && looksLikeMessageStream(input)) {
-    throw new Error(LEGACY_FORMAT_HELP);
+    return prepareStoreStateFromMessages(input, { attachmentsEncoding });
   }
 
   const resolvedEncoding = resolveAttachmentsEncoding({
@@ -258,8 +266,12 @@ const looksLikeMessageStream = (input) => {
     return (
       "gherkinDocument" in item ||
       "pickle" in item ||
+      "testCase" in item ||
       "testCaseStarted" in item ||
       "testCaseFinished" in item ||
+      "testStepFinished" in item ||
+      "attachment" in item ||
+      "hook" in item ||
       "envelope" in item
     );
   });

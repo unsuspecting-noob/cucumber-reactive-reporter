@@ -52,12 +52,15 @@ options.linkTags = linkTags;
 
 ### Options
 
-- `inputFormat`: `legacy-json` (default) or `auto`.
+- `inputFormat`: `legacy-json` (default), `message`, or `auto`.
+  - Use `message` for `--format message:<file>` NDJSON output.
 - `attachmentsEncoding`: `auto` (default), `base64`, or `raw`.
   - Use `raw` if your cucumber JSON stores text attachments unencoded.
   - Use `base64` if text attachments are base64 encoded.
   - `auto` decodes base64-looking text attachments.
 - `cucumberVersion`: optional version hint to pick attachment decoding behavior.
+- `live`: enable incremental updates for message streams; requires `inputFormat: "message"`.
+  - Example: `live: { enabled: true, pollIntervalMs: 2000, flushIntervalMs: 1000 }`.
 
 ### See sample in action:
 [link](https://unsuspecting-noob.github.io/cucumber-reactive-reporter/index.html)

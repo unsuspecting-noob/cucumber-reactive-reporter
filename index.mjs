@@ -13,7 +13,12 @@ import fs from "fs";
 import { link } from "fs/promises";
 import ncp from "ncp";
 import path from "path";
+import readline from "node:readline";
 import ut from "util";
+import {
+    createMessageStateBuilder,
+    prepareStoreStateFromMessageStream
+} from "./src/parser/cucumberMessageAdapter.mjs";
 import { prepareStoreState } from "./src/parser/cucumberJsonAdapter.mjs";
 
 const require = createRequire(import.meta.url);
@@ -88,14 +93,19 @@ const generate = async (source, dest, options) => {
         linkTags = null,
         inputFormat = "legacy-json",
         attachmentsEncoding,
-        cucumberVersion
+        cucumberVersion,
+        live
     } = options;
+    const liveOptions = normalizeLiveOptions(live);
+    const settings = {
+        ...options,
+        live: liveOptions
+    };
 
     let __dirname = path.resolve();
     if (path.isAbsolute(source) === false) {
         source = path.join(__dirname, source);
     }
-    fs.accessSync(source);
 
     if (!dest) {
         dest = path.dirname(source);
@@ -103,6 +113,10 @@ const generate = async (source, dest, options) => {
         if (path.isAbsolute(dest) === false) {
             dest = path.resolve(dest);
         }
+    }
+
+    if (!liveOptions.enabled) {
+        fs.accessSync(source);
     }
 
     console.log(
@@ -115,10 +129,30 @@ const generate = async (source, dest, options) => {
         `metadata: ${ut.inspect(metadata, false, null)}\n` +
         `linkTags: ${ut.inspect(linkTags, false, null)}\n`);
 
+    if (liveOptions.enabled) {
+        if (inputFormat !== "message") {
+            throw new Error("Live updates require inputFormat: \"message\".");
+        }
+        await generateLive({
+            source,
+            dest,
+            htmlPath: HTML_PATH,
+            cucumberJsonPath: CUCUMBER_JSON_PATH,
+            settingsPath: SETTINGS_JSON_PATH,
+            title,
+            settings,
+            attachmentsEncoding,
+            liveOptions
+        });
+        return;
+    }
+
     //validate input json and make a copy
-    let str = fs.readFileSync(source, "utf8");
-    let obj = parseInputData(source, str);
-    let out = prepareStoreState(obj, { inputFormat, attachmentsEncoding, cucumberVersion });
+    const out = await loadStoreState(source, {
+        inputFormat,
+        attachmentsEncoding,
+        cucumberVersion
+    });
     let modifiedJSON = JSON.stringify(out);
     let destExists = true;
     try {
@@ -130,17 +164,225 @@ const generate = async (source, dest, options) => {
         fs.mkdirSync(dest, { recursive: true });
     }
     fs.writeFileSync(path.join(dest, CUCUMBER_JSON_PATH), modifiedJSON);
-    fs.writeFileSync(path.join(dest, SETTINGS_JSON_PATH), JSON.stringify(options));
+    fs.writeFileSync(path.join(dest, SETTINGS_JSON_PATH), JSON.stringify(settings));
 
     await cp(HTML_PATH, dest);
-    //swap out some tokens in the html
-    let indexPagePath = path.join(dest, "index.html");
-    let htmlStr = fs.readFileSync(indexPagePath, "utf8").toString();
-    let modified = htmlStr.replace(/-=title=-/g, _makeSafe(title));
-    fs.writeFileSync(indexPagePath, modified, "utf8");
+    patchIndexTitle(dest, title);
     console.log("done")
 
 }
+
+const generateLive = async ({
+    source,
+    dest,
+    htmlPath,
+    cucumberJsonPath,
+    settingsPath,
+    title,
+    settings,
+    attachmentsEncoding,
+    liveOptions
+}) => {
+    ensureDestination(dest);
+    writeJsonAtomic(path.join(dest, cucumberJsonPath), createEmptyState());
+    fs.writeFileSync(path.join(dest, settingsPath), JSON.stringify(settings));
+
+    await cp(htmlPath, dest);
+    patchIndexTitle(dest, title);
+
+    const builder = createMessageStateBuilder({ attachmentsEncoding });
+    let lastFlush = 0;
+    const flushIntervalMs = Math.max(0, liveOptions.flushIntervalMs);
+
+    for await (const envelope of followMessageEnvelopes(source, liveOptions)) {
+        builder.ingest(envelope);
+        const now = Date.now();
+        if (!flushIntervalMs || now - lastFlush >= flushIntervalMs) {
+            writeJsonAtomic(
+                path.join(dest, cucumberJsonPath),
+                builder.buildState()
+            );
+            lastFlush = now;
+        }
+    }
+
+    writeJsonAtomic(path.join(dest, cucumberJsonPath), builder.buildState());
+    console.log("done");
+};
+
+const loadStoreState = async (
+    source,
+    {
+        inputFormat,
+        attachmentsEncoding,
+        cucumberVersion
+    }
+) => {
+    if (inputFormat === "message") {
+        const envelopes = readMessageEnvelopes(source);
+        return prepareStoreStateFromMessageStream(envelopes, { attachmentsEncoding });
+    }
+
+    const rawText = fs.readFileSync(source, "utf8");
+    const parsed = parseInputData(source, rawText);
+    return prepareStoreState(parsed, { inputFormat, attachmentsEncoding, cucumberVersion });
+};
+
+const readMessageEnvelopes = async function* (source) {
+    const stream = fs.createReadStream(source, { encoding: "utf8" });
+    const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+    let lineNumber = 0;
+
+    try {
+        for await (const line of rl) {
+            lineNumber += 1;
+            const trimmed = line.trim();
+            if (!trimmed.length) {
+                continue;
+            }
+            try {
+                yield JSON.parse(trimmed);
+            } catch (err) {
+                throw new Error(
+                    `Invalid message NDJSON in ${source} at line ${lineNumber}: ${err.message}`
+                );
+            }
+        }
+    } finally {
+        rl.close();
+    }
+};
+
+const followMessageEnvelopes = async function* (
+    source,
+    {
+        pollIntervalMs,
+        idleTimeoutMs,
+        stopOnTestRunFinished
+    }
+) {
+    let offset = 0;
+    let lineNumber = 0;
+    let buffer = "";
+    let lastActivity = Date.now();
+    let seenData = false;
+    const pollMs = Math.max(250, Number(pollIntervalMs) || 1000);
+    const idleMs = Math.max(0, Number(idleTimeoutMs) || 15000);
+    const stopOnFinish = stopOnTestRunFinished !== false;
+
+    while (true) {
+        let fileHandle;
+        try {
+            fileHandle = await fs.promises.open(source, "r");
+        } catch (err) {
+            if (err.code === "ENOENT") {
+                await sleep(pollMs);
+                continue;
+            }
+            throw err;
+        }
+
+        try {
+            const stats = await fileHandle.stat();
+            if (stats.size > offset) {
+                const length = stats.size - offset;
+                const chunk = Buffer.alloc(length);
+                await fileHandle.read(chunk, 0, length, offset);
+                offset = stats.size;
+                buffer += chunk.toString("utf8");
+                const lines = buffer.split(/\r?\n/);
+                buffer = lines.pop() ?? "";
+                for (const line of lines) {
+                    lineNumber += 1;
+                    const trimmed = line.trim();
+                    if (!trimmed.length) {
+                        continue;
+                    }
+                    let envelope;
+                    try {
+                        envelope = JSON.parse(trimmed);
+                    } catch (err) {
+                        throw new Error(
+                            `Invalid message NDJSON in ${source} at line ${lineNumber}: ${err.message}`
+                        );
+                    }
+                    yield envelope;
+                    if (stopOnFinish && envelope.testRunFinished) {
+                        return;
+                    }
+                }
+                lastActivity = Date.now();
+                seenData = true;
+            } else if (seenData && idleMs && Date.now() - lastActivity >= idleMs) {
+                return;
+            }
+        } finally {
+            await fileHandle.close();
+        }
+
+        await sleep(pollMs);
+    }
+};
+
+const patchIndexTitle = (dest, title) => {
+    const indexPagePath = path.join(dest, "index.html");
+    const htmlStr = fs.readFileSync(indexPagePath, "utf8").toString();
+    const modified = htmlStr.replace(/-=title=-/g, _makeSafe(title));
+    fs.writeFileSync(indexPagePath, modified, "utf8");
+};
+
+const ensureDestination = (dest) => {
+    try {
+        fs.accessSync(dest);
+    } catch (err) {
+        fs.mkdirSync(dest, { recursive: true });
+    }
+};
+
+const writeJsonAtomic = (filePath, payload) => {
+    const tempPath = `${filePath}.tmp`;
+    fs.writeFileSync(tempPath, JSON.stringify(payload));
+    fs.renameSync(tempPath, filePath);
+};
+
+const createEmptyState = () => ({
+    features: {
+        list: [],
+        featuresMap: {}
+    },
+    scenarios: {
+        list: [],
+        scenariosMap: {}
+    },
+    steps: {
+        stepsMap: {},
+        totalDurationNanoSec: 0
+    }
+});
+
+const normalizeLiveOptions = (live) => {
+    if (!live) {
+        return { enabled: false };
+    }
+    if (live === true) {
+        return {
+            enabled: true,
+            flushIntervalMs: 1000,
+            pollIntervalMs: 2000,
+            idleTimeoutMs: 15000,
+            stopOnTestRunFinished: true
+        };
+    }
+    return {
+        enabled: live.enabled !== false,
+        flushIntervalMs: live.flushIntervalMs ?? 1000,
+        pollIntervalMs: live.pollIntervalMs ?? 2000,
+        idleTimeoutMs: live.idleTimeoutMs ?? 15000,
+        stopOnTestRunFinished: live.stopOnTestRunFinished !== false
+    };
+};
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const parseInputData = (source, rawText) => {
     try {
