@@ -267,7 +267,8 @@ const followMessageEnvelopes = async function* (
     let lastActivity = Date.now();
     let seenData = false;
     const pollMs = Math.max(250, Number(pollIntervalMs) || 1000);
-    const idleMs = Math.max(0, Number(idleTimeoutMs) || 15000);
+    const idleMsRaw = Number.isFinite(Number(idleTimeoutMs)) ? Number(idleTimeoutMs) : 15000;
+    const idleMs = Math.max(0, idleMsRaw);
     const stopOnFinish = stopOnTestRunFinished !== false;
 
     while (true) {
@@ -369,7 +370,7 @@ const normalizeLiveOptions = (live) => {
             enabled: true,
             flushIntervalMs: 1000,
             pollIntervalMs: 2000,
-            idleTimeoutMs: 15000,
+            idleTimeoutMs: 0,
             stopOnTestRunFinished: true
         };
     }
@@ -377,7 +378,7 @@ const normalizeLiveOptions = (live) => {
         enabled: live.enabled !== false,
         flushIntervalMs: live.flushIntervalMs ?? 1000,
         pollIntervalMs: live.pollIntervalMs ?? 2000,
-        idleTimeoutMs: live.idleTimeoutMs ?? 15000,
+        idleTimeoutMs: live.idleTimeoutMs ?? 0,
         stopOnTestRunFinished: live.stopOnTestRunFinished !== false
     };
 };
