@@ -6,8 +6,9 @@ import { useSelector } from "react-redux";
 const LINE_HEIGHT = 20;
 const MAX_HEIGHT = 800;
 const TextArea = (props) => {
-    const { content, type } = props;
-    const themeName = useSelector((state) => getTheme(state));
+    const { content, type, themeName: themeProp, sourceKey } = props;
+    const storedTheme = useSelector((state) => getTheme(state));
+    const themeName = themeProp ?? storedTheme;
     let cont = content.replace(/\\n/g, "\n");
     const lines = (cont.match(/\n/g) || []).length + 1;
 
@@ -38,14 +39,26 @@ const TextArea = (props) => {
             break;
     }
 
+    const modelPath = sourceKey
+        ? `inmemory://model/${encodeURIComponent(String(sourceKey))}`
+        : undefined;
+
     return (<Editor
         height={height}
         defaultLanguage={lang}
         defaultValue={cont}
+        path={modelPath}
         theme={themeName === "dark" ? "vs-dark" : "vs"}
         readOnly
         className=" overflow-hidden"
         options={options}
     />);
 }
-export default TextArea;
+
+const areEqual = (prevProps, nextProps) =>
+    prevProps.content === nextProps.content
+    && prevProps.type === nextProps.type
+    && prevProps.themeName === nextProps.themeName
+    && prevProps.sourceKey === nextProps.sourceKey;
+
+export default React.memo(TextArea, areEqual);

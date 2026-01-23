@@ -1,5 +1,6 @@
 import { liveUpdateReceived, loadDataFinished, settingsLoaded } from "./store/uistates";
 import { createMessageStateBuilder } from "./parser/cucumberMessageAdapter.mjs";
+import { createStreamingDecoder } from "./utils/ndjsonDecoder";
 
 export default async (store) => {
   let metadata;
@@ -121,6 +122,7 @@ const startMessagePolling = (store, liveOptions, fallbackToState) => {
   let builder = createMessageStateBuilder({
     attachmentsEncoding: liveOptions?.attachmentsEncoding
   });
+  const decoder = createStreamingDecoder();
 
   const applyChunk = (chunk) => {
     let applied = 0;
@@ -171,25 +173,29 @@ const startMessagePolling = (store, liveOptions, fallbackToState) => {
         throw new Error(`message poll failed: ${response.status}`);
       }
       missingCount = 0;
-      const text = await response.text();
-      if (!text) {
+      // Use byte lengths to keep Range offsets aligned with UTF-8 data.
+      const bytes = await response.arrayBuffer();
+      if (!bytes.byteLength) {
         return;
       }
       let applied = 0;
       if (response.status === 206) {
-        applied = applyChunk(text);
-        offset += text.length;
+        const decoded = decoder.decode(bytes);
+        applied = applyChunk(decoded);
+        offset += bytes.byteLength;
       } else {
-        if (offset > 0 && text.length < offset) {
+        if (offset > 0 && bytes.byteLength < offset) {
           offset = 0;
           buffer = "";
           builder = createMessageStateBuilder({
             attachmentsEncoding: liveOptions?.attachmentsEncoding
           });
+          decoder.reset();
         }
-        const slice = offset > 0 ? text.slice(offset) : text;
-        applied = applyChunk(slice);
-        offset = text.length;
+        const slice = offset > 0 ? bytes.slice(offset) : bytes;
+        const decoded = decoder.decode(slice);
+        applied = applyChunk(decoded);
+        offset = bytes.byteLength;
       }
       if (applied > 0) {
         store.dispatch({ type: "reporter/stateReplaced", payload: builder.buildState() });

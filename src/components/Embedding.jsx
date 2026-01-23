@@ -11,9 +11,35 @@ import { blueGrey } from '@mui/material/colors';
 import clsx from 'clsx';
 import { commonCellStyle } from './styles/commonStyles';
 
+const useStyles = makeStyles({
+    clearHidden: {},
+    hiddenPin: {
+        display: "none"
+    },
+    root: {
+        "&:hover $clearHidden": {
+            display: "flex",
+            marginLeft: "-40",
+            position: "absolute"
+        }
+    }
+});
+
+const buildEmbeddingSignature = (items) => {
+    if (!Array.isArray(items)) {
+        return "";
+    }
+    return items.map((item) => {
+        const type = item?.mime_type ?? item?.media?.type ?? "";
+        const data = item?.data ?? item?.media ?? "";
+        return `${type}:${String(data)}`;
+    }).join("|");
+};
+
 const Embedding = (props) => {
     const data = props.content;
     const themeName = props.themeName;
+    const sourceKey = props.sourceKey ?? "";
     let theme = useTheme();
 
     document.documentElement.style.setProperty("--textCol", blueGrey[themeName === "dark" ? 200 : 800]);
@@ -21,24 +47,8 @@ const Embedding = (props) => {
     document.documentElement.style.setProperty("--scrollBarThumbCol", blueGrey[300]);
     document.documentElement.style.setProperty("--scrollBarThumbHoverCol", blueGrey[300]);
 
-    const useStyles = makeStyles({
-        clearHidden: {},
-        hiddenPin: {
-            // visibility: "hidden"
-            display: "none"
-        },
-        root: {
-            "&:hover $clearHidden": {
-                // visibility: "visible"
-                display: "flex",
-                marginLeft: "-40",
-                position: "absolute"
-            }
-        }
-    });
-
     const classes = useStyles();
-    let renderOne = (item, c) => {
+    let renderOne = (item, key) => {
         let value = item.media ? item.media : item.data;
         let _mime = item.mime_type ? item.mime_type : item.media?.type;
         let arr = _mime.split(";");
@@ -47,7 +57,7 @@ const Embedding = (props) => {
             case "text/html":
                 value = value.replace('\\n', '\n'); //really for html only
                 return (
-                    <TableRow key={c} hover className={classes.root}>
+                    <TableRow key={key} hover className={classes.root}>
                         <TableCell align="center" style={{ ...commonCellStyle }}>
                             <div dangerouslySetInnerHTML={{ __html: value }} style={{ maxWidth: "100%" }} />
                         </TableCell>
@@ -63,11 +73,13 @@ const Embedding = (props) => {
             case "text/xml":
             case "application/xml":
                 return (
-                    <TableRow key={c} hover className={classes.root}>
+                    <TableRow key={key} hover className={classes.root}>
                         <TableCell align="center" style={{ ...commonCellStyle }}>
                             <TextArea
                                 content={value}
                                 type="xml"
+                                themeName={themeName}
+                                sourceKey={key}
                             />
                         </TableCell>
                         <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
@@ -90,11 +102,13 @@ const Embedding = (props) => {
                     value = e.message;
                 }
                 return (
-                    <TableRow key={c} hover className={classes.root}>
+                    <TableRow key={key} hover className={classes.root}>
                         <TableCell align="center" style={{ ...commonCellStyle }}>
                             <TextArea
                                 content={value}
                                 type="json"
+                                themeName={themeName}
+                                sourceKey={key}
                             />
                         </TableCell>
                         <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
@@ -108,7 +122,7 @@ const Embedding = (props) => {
                 )
             case "image/png":
                 return (
-                    <TableRow key={c} hover className={classes.root}>
+                    <TableRow key={key} hover className={classes.root}>
                         <TableCell align="center" style={{ ...commonCellStyle }}>
                             {value ? <img src={`data:image/png;base64,${value}`}
                                 alt=""
@@ -126,10 +140,12 @@ const Embedding = (props) => {
             case "text/plain":
             default:
                 return (
-                    <TableRow key={c} hover className={classes.root}>
+                    <TableRow key={key} hover className={classes.root}>
                         <TableCell align="center" style={{ ...commonCellStyle }}>
                             <TextArea
                                 content={value}
+                                themeName={themeName}
+                                sourceKey={key}
                             />
                         </TableCell>
                         <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
@@ -144,17 +160,30 @@ const Embedding = (props) => {
         }
     }
 
-    let count = 0; //change this to use data array index, this way can pass id to mouse over, and render when id matches row key
     return (
         <Box display="flex">
             <TableContainer component={Paper} style={{ marginBottom: "10px", marginTop: "10px" }}>
                 <Table size="small" className={classes.table}>
                     <TableBody>
-                        {data.map((item) => renderOne(item, count++))}
+                        {data.map((item, index) => {
+                            const key = sourceKey ? `${sourceKey}:${index}` : String(index);
+                            return renderOne(item, key);
+                        })}
                     </TableBody>
                 </Table>
             </TableContainer>
         </Box >
     )
 }
-export default Embedding;
+
+const areEqual = (prevProps, nextProps) => {
+    if (prevProps.themeName !== nextProps.themeName) {
+        return false;
+    }
+    if (prevProps.sourceKey !== nextProps.sourceKey) {
+        return false;
+    }
+    return buildEmbeddingSignature(prevProps.content) === buildEmbeddingSignature(nextProps.content);
+};
+
+export default React.memo(Embedding, areEqual);

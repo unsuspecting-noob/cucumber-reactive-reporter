@@ -11,7 +11,6 @@ import {
   getSelectedScenarioId,
   getSettings,
   getTheme,
-  paginatorChange,
   scenarioSelected,
   selectionCleared
 } from "../store/uistates";
@@ -27,7 +26,6 @@ import {
 } from "../store/features";
 import { useDispatch, useSelector } from "react-redux";
 
-import CustomPagination from "./CustomPagination";
 import FeatureContainer from "./FeatureContainer";
 import Masonry from 'react-masonry-css';
 import React from "react";
@@ -80,18 +78,7 @@ const FeaturesList = () => {
     id: "feature_paginator"
   }
   const pagenatorInfo = useSelector((state) => getPaginatorInfo(state, fakeprops));
-  let { page = 1, pSize = FEATURES_PER_PAGE[0], pStart = 0, pEnd = FEATURES_PER_PAGE[0], searchVal = null } = pagenatorInfo ? pagenatorInfo : {};
-
-  const onPaginatorChange = (s, e, page, size, searchVal) => {
-    dispatch(paginatorChange({
-      id: fakeprops.id,
-      page: page,
-      pStart: s,
-      pEnd: e,
-      pSize: size,
-      searchVal: searchVal
-    }));
-  }
+  let { page = 1, pSize = FEATURES_PER_PAGE[0], pStart = 0, pEnd = FEATURES_PER_PAGE[0] } = pagenatorInfo ? pagenatorInfo : {};
 
   React.useEffect(() => {
     if (!selectedFeatureId) {
@@ -159,9 +146,8 @@ const FeaturesList = () => {
   ));
   return (
     <React.Fragment>
-      <Box sx={{ p: 1, border: '2px' }}>
+      <Box sx={{ px: 1, pb: 1 }}>
         <Stack direction="column">
-          {(displayedFeatures.length >= 10 || features.length >= 10) ? (<CustomPagination page={page} searchVal={searchVal} pageSize={pSize} pageSizeArray={FEATURES_PER_PAGE} numItems={features.length} shape="rounded" size="small" boundaryCount={2} onChange={onPaginatorChange} />) : null}
           {splitMode ? (
             <Box
               sx={{
@@ -171,13 +157,25 @@ const FeaturesList = () => {
                 alignItems: "start"
               }}
             >
-              <Stack direction="column" spacing={1}>
+              <Stack direction="column" spacing={1} sx={{ minWidth: 0 }}>
                 {featureNodes}
               </Stack>
-              <ScenarioStepsPanel
-                scenarioId={selectedScenarioId}
-                onClearSelection={handleSelectionClear}
-              />
+              <Box
+                sx={{
+                  position: { xs: "static", lg: "sticky" },
+                  top: { lg: "var(--reporter-header-height, 96px)" },
+                  alignSelf: "start",
+                  minWidth: 0,
+                  maxHeight: { lg: "calc(100vh - var(--reporter-header-height, 96px) - 16px)" },
+                  overflow: { lg: "auto" },
+                  overscrollBehavior: "contain"
+                }}
+              >
+                <ScenarioStepsPanel
+                  scenarioId={selectedScenarioId}
+                  onClearSelection={handleSelectionClear}
+                />
+              </Box>
             </Box>
           ) : isLive ? (
             <Stack direction="column" spacing={1}>

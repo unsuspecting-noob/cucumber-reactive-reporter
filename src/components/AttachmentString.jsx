@@ -8,7 +8,7 @@ import clsx from 'clsx';
 import { makeStyles } from '@mui/styles';
 
 const AttachmentString = (props) => {
-    const { content, bColor } = props;
+    const { content, bColor, themeName, sourceKey } = props;
     const useStyles = makeStyles({
         root: {
             "&:hover $clearHidden": {
@@ -37,6 +37,8 @@ const AttachmentString = (props) => {
                         <TableCell align="center" style={{ border: "groove", borderColor: frameColor }}>
                             <TextArea
                                 content={cont}
+                                themeName={themeName}
+                                sourceKey={sourceKey}
                             />
                         </TableCell>
                         <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>

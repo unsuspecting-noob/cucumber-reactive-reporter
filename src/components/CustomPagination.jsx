@@ -10,7 +10,17 @@ import Select from '@mui/material/Select';
 let ITEMS_PER_PAGE = [3, 5, 10, 50];
 
 const CustomPagination = (props) => {
-    const { page, pageSize, onChange, boundaryCount, size, shape, numItems, searchVal } = props;
+    const {
+        page,
+        pageSize,
+        onChange,
+        boundaryCount,
+        size,
+        shape,
+        numItems,
+        searchVal,
+        fullWidth = false
+    } = props;
     props.pageSizeArray ? ITEMS_PER_PAGE = props.pageSizeArray.slice() : ITEMS_PER_PAGE = [5, 10, 20, 1];
     let jumpVal = 0;
 
@@ -55,7 +65,17 @@ const CustomPagination = (props) => {
 
     return (
         <React.Fragment>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', m: 1 }}
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    m: fullWidth ? 0 : 1,
+                    px: fullWidth ? 0 : 0,
+                    width: fullWidth ? "100%" : "auto",
+                    justifyContent: fullWidth ? "space-between" : "flex-start",
+                    alignItems: "center",
+                    gap: fullWidth ? 1 : 0
+                }}
                 component="form"
                 noValidate
                 autoComplete="off">

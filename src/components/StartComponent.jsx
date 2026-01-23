@@ -2,6 +2,7 @@ import { AppBar, Box, CssBaseline, Drawer, Fab, Fade } from '@mui/material';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
 import FeaturesList from "./FeaturesList";
+import FeaturesPaginationBar from "./FeaturesPaginationBar";
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import LiveSidebar from "./LiveSidebar";
 import PropTypes from 'prop-types';
@@ -126,21 +127,49 @@ const StartComponent = (props) => {
     setLiveDrawerOpen(false);
   };
 
+  const containerRef = React.useRef(null);
+  const appBarRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const container = containerRef.current;
+    const appBar = appBarRef.current;
+    if (!container || !appBar || typeof ResizeObserver === "undefined") {
+      return;
+    }
+    let lastHeight = 0;
+    const updateHeight = () => {
+      const height = appBar.offsetHeight || 0;
+      const rounded = Math.round(height);
+      if (rounded === lastHeight) {
+        return;
+      }
+      lastHeight = rounded;
+      container.style.setProperty("--reporter-header-height", `${rounded}px`);
+    };
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(appBar);
+    window.addEventListener("resize", updateHeight);
+    return () => {
+      window.removeEventListener("resize", updateHeight);
+      observer.disconnect();
+    };
+  }, []);
+
   return (
-    <main className={`containerFluid${isLive ? " live-mode" : ""}`}>
+    <main ref={containerRef} className={`containerFluid${isLive ? " live-mode" : ""}`}>
       <ThemeProvider theme={themeSelector === "dark" ? themeDark : themeLight}>
         <CssBaseline>
-          <AppBar position="sticky">
+          <AppBar position="sticky" ref={appBarRef}>
             <TopBar
               onToggleLiveSidebar={handleToggleLiveDrawer}
               liveSidebarOpen={liveDrawerOpen}
               showLiveSidebarToggle={isLive}
+              paginationNode={<FeaturesPaginationBar />}
             />
           </AppBar>
           <div id="back-to-top-anchor" />
-          <Box sx={{ px: 1 }}>
-            <FeaturesList />
-          </Box>
+          <FeaturesList />
           {isLive ? (
             <Drawer
               anchor="right"

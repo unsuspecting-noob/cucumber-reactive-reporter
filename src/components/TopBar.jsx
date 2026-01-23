@@ -1,7 +1,7 @@
 import '../overwriteStyles.css'
 
 import { Autocomplete, TextField } from "@mui/material";
-import { Button, ButtonGroup, Chip, Container, Divider, FormControlLabel, FormGroup, Grid, Paper, Stack, Switch, Toolbar, Tooltip } from "@mui/material";
+import { Box, Button, ButtonGroup, Chip, Container, Divider, FormControlLabel, FormGroup, Grid, Paper, Stack, Switch, Toolbar, Tooltip } from "@mui/material";
 import {
     FeaturesToggleValuesEnum,
     displayMetadataButtonClicked,
@@ -51,7 +51,8 @@ import { styled } from '@mui/material/styles';
 const TopBar = ({
     onToggleLiveSidebar,
     liveSidebarOpen = false,
-    showLiveSidebarToggle = false
+    showLiveSidebarToggle = false,
+    paginationNode = null
 }) => {
     const dispatch = useDispatch();
     let tagCount = 0;
@@ -325,7 +326,12 @@ const TopBar = ({
                     ) : <React.Fragment />
                     }
                 </Grid>
-                <Divider variant="middle" style={{ marginBottom: "-15px" }} ><Chip label={chip} variant="filled" style={{ fontSize: "1.1em" }} /></Divider>
+                <Divider variant="middle"><Chip label={chip} variant="filled" style={{ fontSize: "1.1em" }} /></Divider>
+                {paginationNode ? (
+                    <Box sx={{ pt: 1 }}>
+                        {paginationNode}
+                    </Box>
+                ) : null}
             </Container >
         </Toolbar >
     );

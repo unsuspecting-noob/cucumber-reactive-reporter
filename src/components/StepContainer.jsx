@@ -14,13 +14,69 @@ import Typography from '@mui/material/Typography';
 import { getSettings } from "../store/uistates";
 import { useSelector } from "react-redux";
 
+const buildArgsSignature = (args) => {
+  if (!Array.isArray(args)) {
+    return "";
+  }
+  return args.map((item) => {
+    if (item?.content) {
+      return `c:${String(item.content)}`;
+    }
+    if (Array.isArray(item?.rows)) {
+      const rows = item.rows.length;
+      const cells = item.rows.reduce((sum, row) => sum + (row?.cells?.length ?? 0), 0);
+      return `t:${rows}:${cells}`;
+    }
+    return "u";
+  }).join("|");
+};
+
+const buildEmbeddingsSignature = (embeddings) => {
+  if (!Array.isArray(embeddings)) {
+    return "";
+  }
+  return embeddings.map((item) => {
+    const type = item?.mime_type ?? item?.media?.type ?? "";
+    const data = item?.data ?? item?.media ?? "";
+    return `${type}:${String(data)}`;
+  }).join("|");
+};
+
+const buildStepSignature = (step) => {
+  if (!step) {
+    return "";
+  }
+  return [
+    step.keyword ?? "",
+    step.name ?? "",
+    step.status ?? "",
+    step.duration ?? "",
+    step.error_message ? "err" : "",
+    buildArgsSignature(step.args),
+    buildEmbeddingsSignature(step.embeddings),
+    step.location ?? ""
+  ].join("|");
+};
+
 const StepContainer = (props) => {
-  let step = props.step;
-  const { duration, keyword, name, args, embeddings, status, location, error_message, themeName } = step;
+  const step = props.step;
+  const {
+    duration,
+    keyword,
+    name,
+    args,
+    embeddings,
+    status,
+    location,
+    error_message,
+    themeName
+  } = step;
   const settings = useSelector((state) => getSettings(state));
   const isLive = Boolean(settings?.live?.enabled);
 
   let num = props.num;
+  const open = Boolean(props.open);
+  const stepKey = props.stepKey ?? "";
 
   let color = "";
   switch (status) {
@@ -37,7 +93,6 @@ const StepContainer = (props) => {
       break;
   }
 
-  let count = 0;
   const hasDuration = duration !== null && duration !== undefined && !Number.isNaN(Number(duration));
   let nanoseconds = hasDuration ? Number(duration) : null;
   //figure out total run time
@@ -63,12 +118,17 @@ const StepContainer = (props) => {
   const hasMore = args?.length || error_message || embeddings?.length;
   const word = keyword.replace(/\s/g, '');
 
-  const [open, setOpen] = React.useState((error_message || (word.toLowerCase() === "after" && embeddings?.length)) ? true : false);
+  const handleToggle = () => {
+    if (!hasMore || !props.onToggle) {
+      return;
+    }
+    props.onToggle(!open);
+  };
 
   return (
     <React.Fragment>
       <Tooltip title={location}>
-        <TableRow onClick={() => setOpen(!open)} hover={!isLive}>
+        <TableRow onClick={handleToggle} hover={!isLive}>
           <TableCell size="small" variant="footer" padding="none" sx={{ width: "10px" }}>
             {hasMore ? (
               <IconButton
@@ -110,27 +170,50 @@ const StepContainer = (props) => {
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             {args?.length ? (
-              args?.map((item) =>
-              (
-                item.content ? (
-                  <Grid container item alignItems="middle" justifyContent="center" key={count++} sx={{ overflow: "auto" }} wrap="nowrap">
-                    <Grid item xs={12}>
-                      <AttachmentString content={item.content} />
+              args.map((item, index) => {
+                const key = `${stepKey}:arg:${index}`;
+                if (item.content) {
+                  return (
+                    <Grid
+                      container
+                      item
+                      alignItems="middle"
+                      justifyContent="center"
+                      key={key}
+                      sx={{ overflow: "auto" }}
+                      wrap="nowrap"
+                    >
+                      <Grid item xs={12}>
+                        <AttachmentString content={item.content} themeName={themeName} sourceKey={key} />
+                      </Grid>
                     </Grid>
-                  </Grid>) :
-                  (item.rows?.length ? (
-                    <Grid container item alignItems="middle" justifyContent="center" key={count++} sx={{ overflow: "auto" }} wrap="nowrap">
+                  );
+                }
+                if (item.rows?.length) {
+                  return (
+                    <Grid
+                      container
+                      item
+                      alignItems="middle"
+                      justifyContent="center"
+                      key={key}
+                      sx={{ overflow: "auto" }}
+                      wrap="nowrap"
+                    >
                       <Grid item xs={12}>
                         <AttachmentTable content={item} themeName={themeName} />
                       </Grid>
-                    </Grid>) : null)
-              ))
+                    </Grid>
+                  );
+                }
+                return null;
+              })
             ) : null}
             {
               error_message ? (
                 <Grid container item alignItems="middle" justifyContent="center" sx={{ overflow: "auto" }} wrap="nowrap">
                   <Grid item xs={12}>
-                    <AttachmentString content={error_message} bColor={color} />
+                    <AttachmentString content={error_message} bColor={color} themeName={themeName} sourceKey={`${stepKey}:error`} />
                   </Grid>
                 </Grid>
               ) : null
@@ -139,7 +222,7 @@ const StepContainer = (props) => {
               embeddings?.length ? (
                 <Grid container item alignItems="middle" justifyContent="center" sx={{ overflow: "auto" }} wrap="nowrap">
                   <Grid item xs={12}>
-                    <Embedding content={embeddings} themeName={themeName} />
+                    <Embedding content={embeddings} themeName={themeName} sourceKey={stepKey} />
                   </Grid>
                 </Grid>
               ) : null
@@ -151,4 +234,20 @@ const StepContainer = (props) => {
   );
 };
 
-export default StepContainer;
+const areEqual = (prevProps, nextProps) => {
+  if (prevProps.num !== nextProps.num) {
+    return false;
+  }
+  if (prevProps.open !== nextProps.open) {
+    return false;
+  }
+  if (prevProps.themeName !== nextProps.themeName) {
+    return false;
+  }
+  if (prevProps.stepKey !== nextProps.stepKey) {
+    return false;
+  }
+  return buildStepSignature(prevProps.step) === buildStepSignature(nextProps.step);
+};
+
+export default React.memo(StepContainer, areEqual);
