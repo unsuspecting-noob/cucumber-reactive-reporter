@@ -131,4 +131,7 @@ const StepsList = (props) => {
   );
 };
 
-export default StepsList;
+const areEqual = (prevProps, nextProps) =>
+  prevProps.id === nextProps.id && prevProps.themeName === nextProps.themeName;
+
+export default React.memo(StepsList, areEqual);
