@@ -41,13 +41,18 @@ import { PieChart } from 'react-minimal-pie-chart';
 import React from "react";
 import TestSelectorButton
     from "./TestSelectorButton";
+import ViewSidebarIcon from "@mui/icons-material/ViewSidebar";
 import {
     getScenariosForAListOfFeatures
 } from "../store/scenarios";
 import { getTotalDurationNanoSec } from "../store/steps";
 import { styled } from '@mui/material/styles';
 
-const TopBar = () => {
+const TopBar = ({
+    onToggleLiveSidebar,
+    liveSidebarOpen = false,
+    showLiveSidebarToggle = false
+}) => {
     const dispatch = useDispatch();
     let tagCount = 0;
     let metaCount = 0;
@@ -211,6 +216,10 @@ const TopBar = () => {
                                 options={options.map((opt) => opt.label)}
                                 renderInput={(params) => <TextField {...params}
                                     label="filter by tags, ex.: @tag1 and not (@tag2 or @tag3)"
+                                    InputLabelProps={{
+                                        ...params.InputLabelProps,
+                                        shrink: true
+                                    }}
                                     InputProps={{
                                         ...params.InputProps,
                                         type: "search"
@@ -223,6 +232,17 @@ const TopBar = () => {
                             orientation="vertical">
                             <Button variant="outlined" color="secondary" onClick={onTagHelpClick} size="small" startIcon={<AlternateEmailIcon />}>tags</Button>
                             <Button variant="outlined" color="secondary" onClick={onMetadataClick} size="small" startIcon={<BookmarkBorderIcon />}>metadata</Button>
+                            {showLiveSidebarToggle ? (
+                                <Button
+                                    variant={liveSidebarOpen ? "contained" : "outlined"}
+                                    color="secondary"
+                                    onClick={onToggleLiveSidebar}
+                                    size="small"
+                                    startIcon={<ViewSidebarIcon />}
+                                >
+                                    live
+                                </Button>
+                            ) : null}
                         </ButtonGroup>
                     </Grid>
                     {/* Title, date and duration here */}

@@ -101,6 +101,14 @@ const generate = async (source, dest, options) => {
         ...options,
         live: liveOptions
     };
+    if (liveOptions.enabled && inputFormat === "message") {
+        const messageBasename = path.basename(source);
+        settings.live = {
+            ...liveOptions,
+            source: liveOptions.source ?? "message",
+            messagePath: liveOptions.messagePath ?? messageBasename ?? "cucumber-messages.ndjson"
+        };
+    }
 
     let __dirname = path.resolve();
     if (path.isAbsolute(source) === false) {
@@ -371,7 +379,8 @@ const normalizeLiveOptions = (live) => {
             flushIntervalMs: 1000,
             pollIntervalMs: 2000,
             idleTimeoutMs: 0,
-            stopOnTestRunFinished: true
+            stopOnTestRunFinished: true,
+            source: "message"
         };
     }
     return {
@@ -379,7 +388,8 @@ const normalizeLiveOptions = (live) => {
         flushIntervalMs: live.flushIntervalMs ?? 1000,
         pollIntervalMs: live.pollIntervalMs ?? 2000,
         idleTimeoutMs: live.idleTimeoutMs ?? 0,
-        stopOnTestRunFinished: live.stopOnTestRunFinished !== false
+        stopOnTestRunFinished: live.stopOnTestRunFinished !== false,
+        source: live.source
     };
 };
 

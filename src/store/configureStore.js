@@ -6,6 +6,7 @@ import featuresReducer from "./features";
 import scenariosReducer from "./scenarios";
 import stateReducer from "./uistates";
 import stepsReducer from "./steps";
+import { mergeReportState } from "./liveMerge";
 // import reducer from "./reducer.js";
 import thunk from "redux-thunk";
 
@@ -30,11 +31,12 @@ export default async function () {
   let reducer = (state, action) => {
     if (action.type === "reporter/stateReplaced") {
       const nextState = action.payload ?? {};
+      const merged = mergeReportState(state, nextState);
       return {
         ...state,
-        features: nextState.features ?? state.features,
-        scenarios: nextState.scenarios ?? state.scenarios,
-        steps: nextState.steps ?? state.steps
+        features: merged.features ?? state.features,
+        scenarios: merged.scenarios ?? state.scenarios,
+        steps: merged.steps ?? state.steps
       };
     }
     return appReducer(state, action);

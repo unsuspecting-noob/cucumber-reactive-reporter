@@ -1,17 +1,18 @@
 import { Badge, Box, Card, CardActionArea, CardContent, CardHeader, Collapse, Divider, Stack, Typography } from "@mui/material";
-import { FeaturesToggleValuesEnum, getFeaturesToggleValue, getSettings } from "../store/uistates";
-import { cyan, green, purple, red, yellow } from '@mui/material/colors';
+import { FeaturesToggleValuesEnum, getFeaturesToggleValue, getLiveActiveFeatureId, getSettings, liveFeatureActivated } from "../store/uistates";
+import { cyan, green, orange, purple, red, yellow } from '@mui/material/colors';
 import {
   getFeatureById,
   getNumberOfFailedScenariosByFeatureId,
   getNumberOfPassedScenariosByFeatureId,
   getNumberOfSkippedScenariosByFeatureId
 } from "../store/features";
+import { getAllScenariosForFeature } from "../store/scenarios";
 
 import React from "react";
 import ScenariosList from "./ScenariosList";
 import { styled } from '@mui/material/styles';
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 export const commonBoxStyles = {
   borderRadius: "3px",
@@ -25,7 +26,18 @@ export const commonBoxStyles = {
   justifyContent: 'center',
 }
 
+const resolveScenarioExecutionState = (steps) => {
+  const list = Array.isArray(steps) ? steps : [];
+  const hasAnyStatus = list.some((step) => step && step.status);
+  if (!hasAnyStatus) {
+    return "pending";
+  }
+  const hasMissingStatus = list.some((step) => !step || !step.status);
+  return hasMissingStatus ? "running" : "complete";
+};
+
 const FeatureContainer = (props) => {
+  const dispatch = useDispatch();
   const {
     description,
     id,
@@ -35,13 +47,27 @@ const FeatureContainer = (props) => {
     themeName
   } = useSelector((state) => getFeatureById(state, props));
   const [expanded, setExpanded] = React.useState(false);
+  const selectionMode = Boolean(props.selectionMode);
+  const isSelected = Boolean(props.isSelected);
+  const effectiveExpanded = selectionMode ? isSelected : expanded;
+  const onSelectFeature = props.onSelectFeature;
 
   const handleExpandClick = () => {
+    if (selectionMode) {
+      if (typeof onSelectFeature === "function") {
+        onSelectFeature(id);
+      }
+      return;
+    }
     setExpanded(!expanded);
   };
 
   const st = useSelector((state) => getFeaturesToggleValue(state, props));
   const settings = useSelector((state) => getSettings(state, props));
+  const scenarios = useSelector((state) => getAllScenariosForFeature(state, props));
+  const stepsMap = useSelector((state) => state.steps.stepsMap);
+  const isLive = Boolean(settings?.live?.enabled);
+  const liveActiveFeatureId = useSelector((state) => getLiveActiveFeatureId(state));
 
   let failedScenariosArr = useSelector((state) =>
     getNumberOfFailedScenariosByFeatureId(state, props));
@@ -52,6 +78,22 @@ const FeatureContainer = (props) => {
   let passedScenarios = passedScenariosArr.length;
   let failedScenarios = failedScenariosArr.length;
   let skippedScenarios = skippedScenariosArr.length;
+  const scenarioStates = scenarios.map((scenario) =>
+    resolveScenarioExecutionState(stepsMap[scenario.id]?.steps)
+  );
+  const featureIsRunning = scenarioStates.some((state) => state === "running");
+  const featureIsPending = scenarioStates.length > 0 && scenarioStates.every((state) => state === "pending");
+  const featureIsActive = isLive && (featureIsRunning || liveActiveFeatureId === id);
+
+  React.useEffect(() => {
+    if (!isLive || !featureIsRunning) {
+      return;
+    }
+    if (liveActiveFeatureId === id) {
+      return;
+    }
+    dispatch(liveFeatureActivated({ id }));
+  }, [dispatch, featureIsRunning, id, isLive, liveActiveFeatureId]);
 
   switch (st) {
     case FeaturesToggleValuesEnum.ALL:
@@ -105,7 +147,18 @@ const FeatureContainer = (props) => {
   }
   let tagkey = 0;
   return (
-    <Item raised={expanded ? true : false} >
+    <Item
+      raised={effectiveExpanded ? true : false}
+      className={featureIsPending ? "live-pending" : ""}
+      sx={{
+        ...(isLive ? null : { contentVisibility: "auto", containIntrinsicSize: "900px 240px" }),
+        ...(featureIsActive ? { borderColor: orange[500], boxShadow: `0 0 0 2px ${orange[200]}` } : null),
+        ...(selectionMode && isSelected && !featureIsActive ? {
+          borderColor: orange[300],
+          boxShadow: `0 0 0 2px ${orange[100]}`
+        } : null)
+      }}
+    >
       <CardActionArea
         onClick={handleExpandClick}>
         <CardHeader
@@ -123,7 +176,10 @@ const FeatureContainer = (props) => {
             </Badge>}
           title={
             <Stack direction="column">
-              {name}
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <span>{name}</span>
+                {featureIsActive ? <span className="live-running-indicator">...</span> : null}
+              </Stack>
               <Divider />
             </Stack>
           }
@@ -147,15 +203,23 @@ const FeatureContainer = (props) => {
             </Stack>
           }
         />
-        {expanded ? <CardContent>
+        {effectiveExpanded ? <CardContent>
           <Typography variant="h6" align="left" marginLeft="1vw">{description}</Typography> </CardContent> : null}
 
       </CardActionArea>
-      <Collapse in={expanded} timeout="auto" unmountOnExit>
+      <Collapse in={effectiveExpanded} timeout="auto" unmountOnExit>
         <CardContent>
           <Stack direction="column" spacing={1} >
             {/* <Divider orientation="horizontal" variant="middle" flexItem /> */}
-            <ScenariosList id={id} filter={props.filter} featureViewState={props.featureViewState} tags={tagArr} />
+            <ScenariosList
+              id={id}
+              filter={props.filter}
+              featureViewState={props.featureViewState}
+              tags={tagArr}
+              selectionMode={selectionMode}
+              selectedScenarioId={props.selectedScenarioId}
+              onScenarioSelected={props.onScenarioSelected}
+            />
           </Stack>
         </CardContent>
       </Collapse>

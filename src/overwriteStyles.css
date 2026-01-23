@@ -60,12 +60,14 @@ a:active {
     margin-left: -10px;
     /* gutter size offset */
     width: auto;
+    overflow-anchor: none;
 }
 
 .my-masonry-grid_column {
     padding-left: 10px;
     /* gutter size */
     background-clip: padding-box;
+    overflow-anchor: none;
 }
 
 .my-masonry-grid_column>div {

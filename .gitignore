@@ -33,6 +33,8 @@ public/cucumber-results.json
 public/packaging
 yarn.lock
 package-lock.json
+dev/mock
+dev/dev
 
 #python
 

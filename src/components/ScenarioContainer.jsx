@@ -1,10 +1,11 @@
 import { Box, Card, CardActionArea, CardContent, CardHeader, Collapse, Stack, Typography } from "@mui/material";
-import { blue, cyan, green, purple, red, yellow } from '@mui/material/colors';
+import { blue, cyan, green, orange, purple, red, yellow } from '@mui/material/colors';
 import { getBoiler, getScenarioContainerCollapsed, getSettings, getTheme, scenarioContainerClicked } from "../store/uistates";
 import {
   getFailedStepsByScenarioId,
   getPassedStepsByScenarioId,
   getPassedStepsNoBoilerByScenarioId,
+  getStepsByScenarioId,
   getSkippedStepsByScenarioId,
 } from "../store/steps";
 import { useDispatch, useSelector } from "react-redux";
@@ -21,6 +22,10 @@ import { useTheme } from '@mui/styles';
 const ScenarioContainer = (props) => {
   const dispatch = useDispatch();
   const featureTags = props.featureTags;
+  const selectionMode = Boolean(props.selectionMode);
+  const isSelected = Boolean(props.isSelected);
+  const onSelectScenario = props.onSelectScenario;
+  const compact = selectionMode;
   const {
     id,
     name,
@@ -30,6 +35,7 @@ const ScenarioContainer = (props) => {
   let skippedSteps = useSelector((state) => getSkippedStepsByScenarioId(state, props));
   let passedSteps = useSelector((state) => getPassedStepsByScenarioId(state, props));
   let passedStepsNoExtra = useSelector((state) => getPassedStepsNoBoilerByScenarioId(state, props));
+  let allSteps = useSelector((state) => getStepsByScenarioId(state, props));
   let showExtra = useSelector((state) => getBoiler(state));
 
   let theme = useTheme();
@@ -39,7 +45,14 @@ const ScenarioContainer = (props) => {
   let collapse = useSelector((state) => getScenarioContainerCollapsed(state, props));
   if (collapse === undefined) collapse = true; //dealing with the fact that our default state is not filled in since we track scenario ui state only after someone clicks it
   const settings = useSelector((state) => getSettings(state, props));
+  const isLive = Boolean(settings?.live?.enabled);
   const handleClick = () => {
+    if (selectionMode) {
+      if (typeof onSelectScenario === "function") {
+        onSelectScenario(id);
+      }
+      return;
+    }
     dispatch(scenarioContainerClicked({ id: id }));
   };
   let nameColor = themeName === "dark" ? blue[300] : cyan[900];
@@ -59,7 +72,7 @@ const ScenarioContainer = (props) => {
     minWidth: "100%",
     border: "2px solid",
     borderColor: theme.palette.divider,
-    backgroundColor: themeName === "dark" ? null : '#d4d4d4'
+    backgroundColor: themeName === "dark" ? null : (compact ? "#e6e2da" : "#d4d4d4")
   }));
 
   let taglinks = [];
@@ -84,53 +97,92 @@ const ScenarioContainer = (props) => {
     console.dir(taglinks, { depth: null });
   }
   let tagkey = 0;
+  const hasAnyStatus = allSteps.some((step) => step && step.status);
+  const hasMissingStatus = allSteps.some((step) => !step || !step.status);
+  const scenarioIsPending = !hasAnyStatus;
+  const scenarioIsRunning = hasAnyStatus && hasMissingStatus;
 
   return (
     <React.Fragment>
-      <Item elevation={3} sx={{ width: "95%", minHeight: "8vh" }}>
+      <Item
+        elevation={3}
+        className={scenarioIsPending ? "live-pending" : ""}
+        sx={{
+          width: compact ? "100%" : "95%",
+          minHeight: compact ? "56px" : "8vh",
+          ...(isLive ? null : { contentVisibility: "auto", containIntrinsicSize: "900px 180px" }),
+          ...(scenarioIsRunning ? { borderColor: orange[500], boxShadow: `0 0 0 2px ${orange[200]}` } : null),
+          ...(selectionMode && isSelected && !scenarioIsRunning ? {
+            borderColor: theme.palette.primary.main,
+            boxShadow: `0 0 0 2px ${theme.palette.primary.light}`
+          } : null)
+        }}
+      >
         <CardActionArea
           onClick={handleClick}>
           <CardHeader
             disableTypography={false}
+            sx={{
+              py: compact ? 0.5 : 1,
+              alignItems: "center",
+              "& .MuiCardHeader-content": {
+                overflow: "hidden"
+              }
+            }}
             action={
-              <Stack direction="column">
-                <br />
-                <Stack direction="row-reverse" spacing={0.5} marginRight="1vw" xs={1.6} justifyContent="middle" alignItems="end">
+              <Box sx={{ display: "flex", alignItems: "center", height: "100%" }}>
+                <Stack direction="row-reverse" spacing={0.5} marginRight="1vw" xs={1.6} justifyContent="middle" alignItems="center">
                   {failedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: red[700] }}>{failedSteps.length}</Box>) : null}
                   {skippedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: yellow[700] }}>{skippedSteps.length}</Box>) : null}
                   {passedStepsNoExtra.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: green[700] }}>{showExtra ? passedSteps.length : passedStepsNoExtra.length}</Box>
                   ) : null}
                 </Stack>
-              </Stack>
+              </Box>
             }
             title={
               <Stack direction="column">
-                <br />
-                {name}
-              </Stack>
-            }
-            titleTypographyProps={{ color: nameColor, marginLeft: "1vw", fontSize: "1.7vmin", textAlign: "left" }}
-            subheader={
-              <Stack direction="column" justifyContent="flex-start">
-                <Typography variant="capture" align="left" style={{ marginLeft: "1vw", minHeight: "1vh", fontStyle: "italic", fontSize: "1.3vmin", fontWeight: "bold", color: purple[400] }}>
+                <Typography
+                  variant="capture"
+                  align="left"
+                  style={{
+                    marginLeft: "1vw",
+                    minHeight: "1vh",
+                    fontStyle: "italic",
+                    fontSize: compact ? "0.65rem" : "1.3vmin",
+                    fontWeight: "bold",
+                    color: purple[400]
+                  }}
+                >
                   <Stack direction="row" spacing="10px">
                     {taglinks.map((tag) => (
                       tag.link ? <a href={tag.link} key={tagkey++}>{tag.name}</a> : <div key={tagkey++}>{tag.name}</div>)
                     )}
                   </Stack>
                 </Typography>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <span>{name}</span>
+                  {scenarioIsRunning ? <span className="live-running-indicator">...</span> : null}
+                </Stack>
               </Stack>
             }
+            titleTypographyProps={{
+              color: nameColor,
+              marginLeft: "1vw",
+              fontSize: compact ? "0.95rem" : "1.7vmin",
+              textAlign: "left"
+            }}
           />
 
         </CardActionArea>
-        <Collapse in={!collapse} timeout="auto" unmountOnExit>
-          <CardContent>
-            <React.Fragment>
-              <StepsList id={id} themeName={themeName} />
-            </React.Fragment>
-          </CardContent>
-        </Collapse>
+        {selectionMode ? null : (
+          <Collapse in={!collapse} timeout="auto" unmountOnExit>
+            <CardContent>
+              <React.Fragment>
+                <StepsList id={id} themeName={themeName} />
+              </React.Fragment>
+            </CardContent>
+          </Collapse>
+        )}
       </Item>
     </React.Fragment >
   );

@@ -12,7 +12,6 @@ import { useSelector } from "react-redux";
 
 const StepsList = (props) => {
   const { id, themeName } = props;
-  let count = 0;
   let stepNumber = 1;
   let allSteps = useSelector((state) => getStepsByScenarioId(state, { id }));
   let showExtra = useSelector((state) => getBoiler(state));
@@ -34,10 +33,9 @@ const StepsList = (props) => {
       <TableContainer component={Item} size="small" sx={{ overflowX: "auto" }}>
         <Table aria-label="collapsible table">
           <TableBody>
-            {steps.map((s) => (
-              // <Row key={row.name} row={row} />
+            {steps.map((s, index) => (
               <StepContainer
-                key={count++}
+                key={`${id}:${index}`}
                 num={(s.keyword.toUpperCase().includes("BEFORE") || s.keyword.toUpperCase().includes("AFTER")) ? undefined : stepNumber++}
                 step={s}
                 themeName={themeName} />

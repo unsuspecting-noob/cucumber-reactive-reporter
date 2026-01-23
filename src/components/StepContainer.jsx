@@ -11,10 +11,14 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import React from "react";
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import { getSettings } from "../store/uistates";
+import { useSelector } from "react-redux";
 
 const StepContainer = (props) => {
   let step = props.step;
   const { duration, keyword, name, args, embeddings, status, location, error_message, themeName } = step;
+  const settings = useSelector((state) => getSettings(state));
+  const isLive = Boolean(settings?.live?.enabled);
 
   let num = props.num;
 
@@ -34,22 +38,27 @@ const StepContainer = (props) => {
   }
 
   let count = 0;
-  let nanoseconds = duration;
-  if (isNaN(duration)) nanoseconds = 0;
+  const hasDuration = duration !== null && duration !== undefined && !Number.isNaN(Number(duration));
+  let nanoseconds = hasDuration ? Number(duration) : null;
   //figure out total run time
   DayJs.extend(Duration);
-  let t = nanoseconds / 1000000;
-  if (t % 1 !== 0) {
-    t = Math.round(t);
-  }
-  let d = DayJs.duration(t);
   let duration_str = "";
-  let m = d.minutes();
-  let s = d.seconds();
-  let ms = Math.round(d.milliseconds());
-  if (m > 0) duration_str = duration_str + `${m}m`;
-  if (s > 0) duration_str = duration_str + `${duration_str !== "" ? " " + s + "s" : s + "s"}`;
-  if (ms > 0) duration_str = duration_str + `${duration_str !== "" ? " " + ms + "ms" : ms + "ms"}`;
+  if (hasDuration) {
+    let t = nanoseconds / 1000000;
+    if (t % 1 !== 0) {
+      t = Math.round(t);
+    }
+    let d = DayJs.duration(t);
+    let m = d.minutes();
+    let s = d.seconds();
+    let ms = Math.round(d.milliseconds());
+    if (m > 0) duration_str = duration_str + `${m}m`;
+    if (s > 0) duration_str = duration_str + `${duration_str !== "" ? " " + s + "s" : s + "s"}`;
+    if (ms > 0) duration_str = duration_str + `${duration_str !== "" ? " " + ms + "ms" : ms + "ms"}`;
+    if (!duration_str) {
+      duration_str = "0ms";
+    }
+  }
 
   const hasMore = args?.length || error_message || embeddings?.length;
   const word = keyword.replace(/\s/g, '');
@@ -59,7 +68,7 @@ const StepContainer = (props) => {
   return (
     <React.Fragment>
       <Tooltip title={location}>
-        <TableRow onClick={() => setOpen(!open)} hover={true}>
+        <TableRow onClick={() => setOpen(!open)} hover={!isLive}>
           <TableCell size="small" variant="footer" padding="none" sx={{ width: "10px" }}>
             {hasMore ? (
               <IconButton

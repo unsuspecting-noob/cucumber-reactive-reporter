@@ -80,39 +80,32 @@ export const getFeatureById = (state, { id }) => {
 };
 
 export const getAllFeatures = createSelector(
+  (state) => state.features.list,
   (state) => state.features.featuresMap,
-  (features) => Object.values(features)
+  (list, features) => list.map((id) => features[id]).filter(Boolean)
 );
 
 
 export const getAllFailedFeatures = createSelector(
-  (state) => state.features.featuresMap,
-  (features) => {
-    return Object.values(features).filter((f) => {
-      return f.numFailedScenarios > 0;
-    });
-  }
+  getAllFeatures,
+  (features) => features.filter((f) => f.numFailedScenarios > 0)
 );
 
 export const getAllPassedFeatures = createSelector(
-  (state) => state.features.featuresMap,
+  getAllFeatures,
   (features) => {
     //there is no numPassedScenarios, need to calc
-    let sc = Object.values(features);
+    const sc = features;
     return sc.filter((f) => {
-      let p = sc.length - f.numFailedScenarios - f.numSkippedScenarios;
+      const p = sc.length - f.numFailedScenarios - f.numSkippedScenarios;
       return (p > 0);
     });
   }
 );
 
 export const getAllSkippedFeatures = createSelector(
-  (state) => state.features.featuresMap,
-  (features) => {
-    return Object.values(features).filter((f) => {
-      return f.numSkippedScenarios > 0;
-    });
-  }
+  getAllFeatures,
+  (features) => features.filter((f) => f.numSkippedScenarios > 0)
 );
 
 export const getTotalNumberOfFailedScenarios = createSelector(

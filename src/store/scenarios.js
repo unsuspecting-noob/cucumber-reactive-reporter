@@ -92,65 +92,70 @@ export const getScenarioById = (state, { id }) => {
 
 export const getAllScenariosForFeature = createSelector(
   [
-    state => Object.values(state.scenarios.scenariosMap),
+    (state) => state.scenarios.list,
+    (state) => state.scenarios.scenariosMap,
     (state, { id }) => id
   ],
-  (scenarios, featureId) => {
-    let ret = scenarios.filter(
-      (sc) => {
-        return sc.id.startsWith(featureId);
-      }
-    );
-    return ret;
-  });
+  (scenarioIds, scenariosMap, featureId) => {
+    if (!featureId) {
+      return [];
+    }
+    return scenarioIds
+      .map((id) => scenariosMap[id])
+      .filter((scenario) => scenario?.id?.startsWith(featureId));
+  }
+);
 
 const _getAllScenariosForFeatureWithState = createSelector(
   [
-    state => Object.values(state.scenarios.scenariosMap),
+    (state) => state.scenarios.list,
+    (state) => state.scenarios.scenariosMap,
     (state, { id }) => id,
-    state => getFeaturesToggleValue(state)
+    (state) => getFeaturesToggleValue(state)
   ],
-  (scenarios, featureId, st) => {
-    let ret = scenarios.filter(
-      (sc) => {
-        let result;
-        let match = sc.id.startsWith(featureId);
-        if (match) {
-          switch (st) {
-            case FeaturesToggleValuesEnum.ALL:
-              result = true;
-              break;
-            case FeaturesToggleValuesEnum.PASSED:
-              result = sc.passedSteps > 0 && sc.failedSteps === 0 && sc.skippedSteps === 0;
-              break;
-            case FeaturesToggleValuesEnum.FAILED:
-              result = sc.failedSteps !== 0;
-              break;
-            case FeaturesToggleValuesEnum.SKIPPED:
-              result = sc.skippedSteps !== 0 && sc.failedSteps === 0;
-              break;
-            default:
-              break
-          }
-          return result;
-        } else return false;
-      }
-    );
-    return ret;
-  });
+  (scenarioIds, scenariosMap, featureId, st) => {
+    if (!featureId) {
+      return [];
+    }
+    return scenarioIds
+      .map((id) => scenariosMap[id])
+      .filter((scenario) => {
+        if (!scenario?.id?.startsWith(featureId)) {
+          return false;
+        }
+        switch (st) {
+          case FeaturesToggleValuesEnum.ALL:
+            return true;
+          case FeaturesToggleValuesEnum.PASSED:
+            return scenario.passedSteps > 0
+              && scenario.failedSteps === 0
+              && scenario.skippedSteps === 0;
+          case FeaturesToggleValuesEnum.FAILED:
+            return scenario.failedSteps !== 0;
+          case FeaturesToggleValuesEnum.SKIPPED:
+            return scenario.skippedSteps !== 0 && scenario.failedSteps === 0;
+          default:
+            return false;
+        }
+      });
+  }
+);
 export const getAllScenariosForFeatureWithState = createSelector([getLastEnteredSearchValue, _getAllScenariosForFeatureWithState], _filterScenarios);
 
 const _getScenariosForAListOfFeaturesUnfiltered = createSelector(
   [
-    state => Object.values(state.scenarios.scenariosMap),
+    (state) => state.scenarios.list,
+    (state) => state.scenarios.scenariosMap,
     (state, { list }) => list
-  ], (scenarios, featureIds) => {
-    let ret = [];
-    for (let fid of featureIds) {
-      let r = scenarios.filter((sc) => sc.id.startsWith(fid));
-      if (r.length) ret = ret.concat(r);
+  ],
+  (scenarioIds, scenariosMap, featureIds) => {
+    if (!Array.isArray(featureIds)) {
+      return [];
     }
-    return ret;
+    const featureSet = new Set(featureIds);
+    return scenarioIds
+      .map((id) => scenariosMap[id])
+      .filter((scenario) => featureSet.has(scenario?.featureId));
   }
 );
 export const getScenariosForAListOfFeatures = createSelector([getLastEnteredSearchValue, _getScenariosForAListOfFeaturesUnfiltered], _filterScenarios);

@@ -76,8 +76,15 @@ const decodeBase64Text = (value) => {
   if (!looksLikeBase64(value)) {
     return null;
   }
-  const decoded = Buffer.from(value, "base64").toString("utf8");
-  if (!isLikelyText(decoded)) {
+  let decoded = null;
+  if (typeof Buffer !== "undefined") {
+    decoded = Buffer.from(value, "base64").toString("utf8");
+  } else if (typeof atob === "function") {
+    const binary = atob(value);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    decoded = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+  }
+  if (!decoded || !isLikelyText(decoded)) {
     return null;
   }
   return decoded;

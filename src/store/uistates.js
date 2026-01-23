@@ -22,8 +22,14 @@ let slice = createSlice({
       finishedLoadingData: false,
       searchHistory: [],
       showBoiler: true,
+      liveActiveFeatureId: null,
+      selectedFeatureId: null,
+      selectedScenarioId: null,
       tagsDisplay: false,
       metadataDisplay: false
+    },
+    liveStatus: {
+      lastUpdateAt: null
     },
     scenarioContainers: {},
     paginators: {}
@@ -94,6 +100,20 @@ let slice = createSlice({
       }
       states.scenarioContainers[id].collapsed = !states.scenarioContainers[id].collapsed;
     },
+    featureSelected: (states, action) => {
+      const id = action.payload?.id ?? null;
+      if (states.featuresList.selectedFeatureId !== id) {
+        states.featuresList.selectedFeatureId = id;
+        states.featuresList.selectedScenarioId = null;
+      }
+    },
+    scenarioSelected: (states, action) => {
+      states.featuresList.selectedScenarioId = action.payload?.id ?? null;
+    },
+    selectionCleared: (states, action) => {
+      states.featuresList.selectedFeatureId = null;
+      states.featuresList.selectedScenarioId = null;
+    },
     paginatorChange: (states, action) => {
       const {
         id,
@@ -122,6 +142,12 @@ let slice = createSlice({
     },
     toggleBoiler: (states, action) => {
       states.featuresList.showBoiler = !states.featuresList.showBoiler;
+    },
+    liveFeatureActivated: (states, action) => {
+      states.featuresList.liveActiveFeatureId = action.payload?.id ?? null;
+    },
+    liveUpdateReceived: (states, action) => {
+      states.liveStatus.lastUpdateAt = action.payload?.timestamp ?? Date.now();
     }
   },
 });
@@ -165,8 +191,24 @@ export const getFeaturesToggleValue = (state) => {
   return state.states.featuresList.featuresButtonToggleValue;
 };
 
+export const getLiveActiveFeatureId = (state) => {
+  return state.states.featuresList.liveActiveFeatureId;
+};
+
+export const getSelectedFeatureId = (state) => {
+  return state.states.featuresList.selectedFeatureId;
+};
+
+export const getSelectedScenarioId = (state) => {
+  return state.states.featuresList.selectedScenarioId;
+};
+
 export const getTagsDisplayButtonState = (state) => {
   return state.states.featuresList.tagsDisplay;
+};
+
+export const getLiveStatus = (state) => {
+  return state.states.liveStatus;
 };
 
 export const getMetadataDisplayButtonState = (state) => {
@@ -186,13 +228,18 @@ export const {
   displayMetadataButtonClicked,
   featuresToggleClicked,
   featureLoadProgressChanged,
+  featureSelected,
   filterByTags,
   loadFeaturesStarted,
   loadFeaturesFinished,
   loadDataFinished,
   paginatorChange,
+  scenarioSelected,
   scenarioContainerClicked,
+  selectionCleared,
   settingsLoaded,
+  liveFeatureActivated,
+  liveUpdateReceived,
   toggleBoiler,
   toggleTheme
 } = slice.actions;
