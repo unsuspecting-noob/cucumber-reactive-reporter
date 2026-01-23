@@ -9,7 +9,6 @@ import {
   getPaginatorInfo,
   getSelectedFeatureId,
   getSelectedScenarioId,
-  getSettings,
   getTheme,
   scenarioSelected,
   selectionCleared
@@ -27,7 +26,6 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 
 import FeatureContainer from "./FeatureContainer";
-import Masonry from 'react-masonry-css';
 import React from "react";
 import ScenarioStepsPanel from "./ScenarioStepsPanel";
 import { getAllScenariosForFeatureWithState } from "../store/scenarios";
@@ -48,8 +46,6 @@ const FeaturesList = () => {
   let matchedFeatures_FAILED = useSelector((state) => getFailedMatchingFeatureIds(state));
   let matchedFeatures_SKIPPED = useSelector((state) => getSkippedMatchingFeatureIds(state));
   let themeName = useSelector((state) => getTheme(state));
-  let settings = useSelector((state) => getSettings(state));
-  const isLive = Boolean(settings?.live?.enabled);
   const selectedFeatureId = useSelector((state) => getSelectedFeatureId(state));
   const selectedScenarioId = useSelector((state) => getSelectedScenarioId(state));
   const selectedScenarios = useSelector((state) =>
@@ -125,10 +121,6 @@ const FeaturesList = () => {
   }
 
   let displayedFeatures = features.slice(pStart, pEnd);
-  const breakpointColumnsObj = React.useMemo(() => ({
-    default: displayedFeatures.length <= 10 ? 1 : 2,
-    1280: 1
-  }), [displayedFeatures.length]);
   const featureNodes = displayedFeatures.map((f) => (
     <Grid container key={f.id}>
       <FeatureContainer
@@ -177,14 +169,10 @@ const FeaturesList = () => {
                 />
               </Box>
             </Box>
-          ) : isLive ? (
+          ) : (
             <Stack direction="column" spacing={1}>
               {featureNodes}
             </Stack>
-          ) : (
-            <Masonry breakpointCols={breakpointColumnsObj} className="my-masonry-grid" columnClassName="my-masonry-grid_column">
-              {featureNodes}
-            </Masonry>
           )}
         </Stack>
       </Box>
