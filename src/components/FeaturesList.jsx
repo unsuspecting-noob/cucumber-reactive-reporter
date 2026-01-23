@@ -146,14 +146,14 @@ const FeaturesList = () => {
   ));
   return (
     <React.Fragment>
-      <Box sx={{ px: 1, pb: 1 }}>
+      <Box sx={{ px: 1, pb: 1, pt: 1 }}>
         <Stack direction="column">
           {splitMode ? (
             <Box
               sx={{
                 display: "grid",
                 gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1fr) minmax(0, 1fr)" },
-                gap: 2,
+                gap: 1,
                 alignItems: "start"
               }}
             >

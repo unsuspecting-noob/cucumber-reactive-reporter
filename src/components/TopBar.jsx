@@ -328,9 +328,12 @@ const TopBar = ({
                 </Grid>
                 <Divider variant="middle"><Chip label={chip} variant="filled" style={{ fontSize: "1.1em" }} /></Divider>
                 {paginationNode ? (
-                    <Box sx={{ pt: 1 }}>
-                        {paginationNode}
-                    </Box>
+                    <React.Fragment>
+                        <Box sx={{ pt: 1 }}>
+                            {paginationNode}
+                        </Box>
+                        <Box sx={{ height: 8, backgroundColor: "background.default" }} />
+                    </React.Fragment>
                 ) : null}
             </Container >
         </Toolbar >
