@@ -1,7 +1,7 @@
 import '../overwriteStyles.css'
 
 import { Autocomplete, TextField } from "@mui/material";
-import { Box, Button, ButtonGroup, Chip, Container, Divider, FormControlLabel, FormGroup, Grid, Paper, Stack, Switch, Toolbar, Tooltip } from "@mui/material";
+import { Box, Button, ButtonGroup, Chip, Container, Divider, FormControlLabel, FormGroup, Grid, Paper, Stack, Switch, Toolbar, Tooltip, Typography } from "@mui/material";
 import {
     FeaturesToggleValuesEnum,
     displayMetadataButtonClicked,
@@ -34,6 +34,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 
 import AlternateEmailIcon from "@mui/icons-material/AlternateEmail";
+import BackspaceIcon from "@mui/icons-material/Backspace";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import DayJs from "dayjs";
 import Duration from "dayjs/plugin/duration";
@@ -55,11 +56,11 @@ const TopBar = ({
     paginationNode = null
 }) => {
     const dispatch = useDispatch();
-    let tagCount = 0;
     let metaCount = 0;
     let features;
-    let helpTagList = [];
     let titleChipColor;
+    const filterInputRef = React.useRef(null);
+    const scrollFilterToEndRef = React.useRef(false);
 
     let displayFeaturesToggleState = useSelector((state) => getFeaturesToggleValue(state));
     let totalTimeMsec = useSelector((state) => getTotalDurationNanoSec(state)) / 1000000;
@@ -134,12 +135,83 @@ const TopBar = ({
     }
     const options = useSelector((state) => getFilterHistory(state))
 
+    const focusFilterInput = () => {
+        if (filterInputRef.current) {
+            filterInputRef.current.focus();
+        }
+    }
+
+    const scrollFilterToEnd = () => {
+        const input = filterInputRef.current;
+        if (!input) {
+            return;
+        }
+        const length = input.value.length;
+        input.focus();
+        if (typeof input.setSelectionRange === "function") {
+            input.setSelectionRange(length, length);
+        }
+        input.scrollLeft = input.scrollWidth;
+    }
+
     const onTagHelpClick = () => {
         dispatch(displayTagsHelpButtonClicked());
+        focusFilterInput();
     }
 
     const onMetadataClick = () => {
         dispatch(displayMetadataButtonClicked());
+    }
+
+    const appendTagToken = (currentValue, token) => {
+        const trimmed = (currentValue ?? "").replace(/\s+$/, "");
+        const lastChar = trimmed.slice(-1);
+        const isOperator = token === "and" || token === "or" || token === "not";
+        if (trimmed === "") {
+            return token;
+        }
+        if (token === ")") {
+            return `${trimmed})`;
+        }
+        if (token === "(") {
+            return lastChar === "(" ? `${trimmed}(` : `${trimmed} (`;
+        }
+        if (isOperator) {
+            return lastChar === "(" ? `${trimmed}${token}` : `${trimmed} ${token}`;
+        }
+        return lastChar === "(" ? `${trimmed}${token}` : `${trimmed} ${token}`;
+    }
+
+    const onTagTokenClick = (token) => {
+        const nextValue = appendTagToken(filterVal, token);
+        scrollFilterToEndRef.current = true;
+        dispatch(filterByTags({ value: nextValue, label: nextValue, type: "clickTag" }))
+        focusFilterInput();
+    }
+
+    const removeLastToken = (currentValue) => {
+        const trimmed = (currentValue ?? "").replace(/\s+$/, "");
+        if (trimmed === "") {
+            return "";
+        }
+        const lastChar = trimmed.slice(-1);
+        if (lastChar === "(" || lastChar === ")") {
+            return trimmed.slice(0, -1).replace(/\s+$/, "");
+        }
+        const tokenMatch = trimmed.match(/(@[^\s()]+|and|or|not)$/);
+        if (tokenMatch) {
+            const token = tokenMatch[1];
+            const tokenStart = trimmed.lastIndexOf(token);
+            return trimmed.slice(0, tokenStart).replace(/\s+$/, "");
+        }
+        return trimmed.replace(/\S+$/, "").replace(/\s+$/, "");
+    }
+
+    const onDeleteLastTokenClick = () => {
+        const nextValue = removeLastToken(filterVal);
+        scrollFilterToEndRef.current = true;
+        dispatch(filterByTags({ value: nextValue, label: nextValue, type: "deleteTagToken" }))
+        focusFilterInput();
     }
 
     const onChange = (e, val, reason) => {
@@ -163,8 +235,26 @@ const TopBar = ({
         dispatch(toggleBoiler());
     }
 
+    React.useEffect(() => {
+        if (!scrollFilterToEndRef.current) {
+            return;
+        }
+        scrollFilterToEndRef.current = false;
+        requestAnimationFrame(() => scrollFilterToEnd());
+    }, [filterVal]);
+
     //generate list of tags to use in the search help popup ("@" button)
-    features.map(f => f.allTags).forEach(tagArr => tagArr.map(obj => obj.name).forEach(tag => helpTagList.includes(tag) ? true : helpTagList.push(tag)));
+    const helpTagSet = new Set();
+    features.forEach((feature) => {
+        (feature.allTags ?? []).forEach((tag) => {
+            if (tag?.name) {
+                helpTagSet.add(tag.name);
+            }
+        });
+    });
+    const helpTagList = Array.from(helpTagSet).sort();
+    const operatorTokens = ["(", ")", "and", "or", "not"];
+    const helpTagTokens = helpTagList;
 
     //styles
 
@@ -216,6 +306,12 @@ const TopBar = ({
                                 value={filterVal}
                                 options={options.map((opt) => opt.label)}
                                 renderInput={(params) => <TextField {...params}
+                                    inputRef={filterInputRef}
+                                    sx={{
+                                        "& .MuiInputBase-root": {
+                                            backgroundColor: themeName === "light" ? "#e0dad0" : "background.paper"
+                                        }
+                                    }}
                                     label="filter by tags, ex.: @tag1 and not (@tag2 or @tag3)"
                                     InputLabelProps={{
                                         ...params.InputLabelProps,
@@ -311,17 +407,77 @@ const TopBar = ({
                                 minWidth: "55vw",
                                 maxWidth: "95vw"
                             }}>tags</Divider>
-                            <Stack direction="row"
-                                spacing={1}
-                                alignItems="center"
-                                justifyContent="center"
-                                divider={<Divider orientation="vertical" variant="middle" flexItem />}
-                                sx={{ display: 'flex', flexWrap: 'wrap' }}
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    flexDirection: "row",
+                                    alignItems: "stretch",
+                                    gap: 2,
+                                    mt: 1,
+                                    px: 2,
+                                    py: 1.5,
+                                    borderRadius: 2,
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    backgroundColor: "background.paper",
+                                    minWidth: "55vw",
+                                    maxWidth: "95vw",
+                                    width: "95vw",
+                                    margin: "0 auto"
+                                }}
                             >
-                                {helpTagList.sort().map((t) => (
-                                    <div key={tagCount++}>{t}</div>
-                                ))}
-                            </Stack>
+                                <Stack
+                                    direction="column"
+                                    spacing={1}
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    sx={{ minWidth: 120 }}
+                                >
+                                    <Chip
+                                        icon={<BackspaceIcon />}
+                                        label="Del"
+                                        size="small"
+                                        color="secondary"
+                                        variant="outlined"
+                                        onClick={onDeleteLastTokenClick}
+                                        sx={{
+                                            visibility: filterVal ? "visible" : "hidden",
+                                            pointerEvents: filterVal ? "auto" : "none"
+                                        }}
+                                    />
+                                    <Typography variant="caption" color="text.secondary">
+                                        Operators
+                                    </Typography>
+                                    {operatorTokens.map((t) => (
+                                        <Chip
+                                            key={`op-token-${t}`}
+                                            label={t}
+                                            size="small"
+                                            color="secondary"
+                                            variant="filled"
+                                            onClick={() => onTagTokenClick(t)}
+                                        />
+                                    ))}
+                                </Stack>
+                                <Divider orientation="vertical" flexItem />
+                                <Stack
+                                    direction="row"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    sx={{ display: "flex", flexWrap: "wrap", gap: 1, flex: 1 }}
+                                >
+                                    {helpTagTokens.map((t) => (
+                                        <Chip
+                                            key={`tag-token-${t}`}
+                                            label={t}
+                                            size="small"
+                                            color="default"
+                                            variant="outlined"
+                                            onClick={() => onTagTokenClick(t)}
+                                        />
+                                    ))}
+                                </Stack>
+                            </Box>
                         </Stack>
                     ) : <React.Fragment />
                     }
@@ -332,7 +488,7 @@ const TopBar = ({
                         <Box sx={{ pt: 1 }}>
                             {paginationNode}
                         </Box>
-                        <Box sx={{ height: 8, backgroundColor: "background.default" }} />
+                        <Box sx={{ height: 8, backgroundColor: "transparent" }} />
                     </React.Fragment>
                 ) : null}
             </Container >

@@ -9,6 +9,7 @@
  */
 
 import { Box, Button, Chip, Divider, Paper, Stack, Typography } from "@mui/material";
+import { purple } from "@mui/material/colors";
 import { useSelector } from "react-redux";
 import { getFeatureById } from "../store/features";
 import { getScenarioById } from "../store/scenarios";
@@ -81,7 +82,19 @@ const ScenarioStepsPanel = ({ scenarioId, onClearSelection }) => {
         {scenario.tags?.length ? (
           <Stack direction="row" spacing={1} flexWrap="wrap">
             {scenario.tags.map((tag) => (
-              <Chip key={tag.name} size="small" label={tag.name} />
+              <Chip
+                key={tag.name}
+                size="small"
+                label={tag.name}
+                variant="filled"
+                sx={{
+                  color: purple[400],
+                  backgroundColor: "transparent",
+                  border: "none",
+                  borderRadius: 1,
+                  px: 0.25
+                }}
+              />
             ))}
           </Stack>
         ) : null}

@@ -163,9 +163,20 @@ const FeatureContainer = (props) => {
         onClick={handleExpandClick}>
         <CardHeader
           disableTypography={false}
+          sx={{
+            py: 0.5,
+            alignItems: "center",
+            "& .MuiCardHeader-action": {
+              alignSelf: "center",
+              marginTop: 0
+            },
+            "& .MuiCardHeader-content": {
+              minWidth: 0
+            }
+          }}
           action={
             <Badge>
-              <Stack direction="row-reverse" spacing={0.5} marginRight="1vw" xs={1.6} justifyContent="middle" alignItems="end">
+              <Stack direction="row-reverse" spacing={0.5} marginRight="1vw" xs={1.6} justifyContent="middle" alignItems="center">
                 {failedScenarios > 0 ? (<Box justifyContent="center" alignItems="center"
                   sx={{ ...commonBoxStyles, backgroundColor: red[700] }}>{failedScenarios}</Box>) : null}
                 {skippedScenarios > 0 ? (<Box justifyContent="center" alignItems="center"
@@ -203,12 +214,20 @@ const FeatureContainer = (props) => {
             </Stack>
           }
         />
-        {effectiveExpanded ? <CardContent>
-          <Typography variant="h6" align="left" marginLeft="1vw">{description}</Typography> </CardContent> : null}
+        {effectiveExpanded ? <CardContent sx={{ pt: 1, pb: 0.5 }}>
+          <Typography
+            variant="h6"
+            align="left"
+            marginLeft="1vw"
+            sx={{ whiteSpace: "normal", overflowWrap: "anywhere" }}
+          >
+            {description}
+          </Typography>
+        </CardContent> : null}
 
       </CardActionArea>
       <Collapse in={effectiveExpanded} timeout="auto" unmountOnExit>
-        <CardContent>
+        <CardContent sx={{ pt: 1 }}>
           <Stack direction="column" spacing={1} >
             {/* <Divider orientation="horizontal" variant="middle" flexItem /> */}
             <ScenariosList

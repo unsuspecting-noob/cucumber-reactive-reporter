@@ -119,19 +119,32 @@ const ScenarioContainer = (props) => {
         }}
       >
         <CardActionArea
-          onClick={handleClick}>
+          onClick={handleClick}
+          sx={{
+            minHeight: "inherit",
+            display: "flex",
+            alignItems: "stretch"
+          }}>
           <CardHeader
             disableTypography={false}
             sx={{
               py: compact ? 0.5 : 1,
               alignItems: "center",
+              width: "100%",
+              flex: "1 1 auto",
+              "& .MuiCardHeader-action": {
+                alignSelf: "center",
+                marginTop: 0,
+                marginRight: 0
+              },
               "& .MuiCardHeader-content": {
-                overflow: "hidden"
+                overflow: "hidden",
+                flex: "1 1 auto"
               }
             }}
             action={
-              <Box sx={{ display: "flex", alignItems: "center", height: "100%" }}>
-                <Stack direction="row-reverse" spacing={0.5} marginRight="1vw" xs={1.6} justifyContent="middle" alignItems="center">
+              <Box sx={{ display: "flex", alignItems: "center", height: "100%", justifyContent: "flex-end", pr: compact ? 0.5 : 1 }}>
+                <Stack direction="row-reverse" spacing={0.5} xs={1.6} justifyContent="middle" alignItems="center">
                   {failedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: red[700] }}>{failedSteps.length}</Box>) : null}
                   {skippedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: yellow[700] }}>{skippedSteps.length}</Box>) : null}
                   {passedStepsNoExtra.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: green[700] }}>{showExtra ? passedSteps.length : passedStepsNoExtra.length}</Box>
@@ -145,7 +158,6 @@ const ScenarioContainer = (props) => {
                   variant="capture"
                   align="left"
                   style={{
-                    marginLeft: "1vw",
                     minHeight: "1vh",
                     fontStyle: "italic",
                     fontSize: compact ? "0.65rem" : "1.3vmin",
