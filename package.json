@@ -1,6 +1,6 @@
 {
   "name": "cucumber-reactive-reporter",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "A filterable html report generator for cucumberjs written in react",
   "private": false,
   "homepage": "https://github.com/unsuspecting-noob/cucumber-reactive-reporter",
