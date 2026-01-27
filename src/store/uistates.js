@@ -26,7 +26,8 @@ let slice = createSlice({
       selectedFeatureId: null,
       selectedScenarioId: null,
       tagsDisplay: false,
-      metadataDisplay: false
+      metadataDisplay: false,
+      splitPaneRatio: 55
     },
     liveStatus: {
       lastUpdateAt: null
@@ -80,6 +81,14 @@ let slice = createSlice({
     },
     displayMetadataButtonClicked: (states, action) => {
       states.featuresList.metadataDisplay = !states.featuresList.metadataDisplay;
+    },
+    setSplitPaneRatio: (states, action) => {
+      const raw = Number(action.payload?.value);
+      if (Number.isNaN(raw)) {
+        return;
+      }
+      const clamped = Math.min(75, Math.max(25, raw));
+      states.featuresList.splitPaneRatio = clamped;
     },
     loadFeaturesFinished: (states, action) => {
       states.featuresList.loading = false;
@@ -215,6 +224,10 @@ export const getMetadataDisplayButtonState = (state) => {
   return state.states.featuresList.metadataDisplay;
 };
 
+export const getSplitPaneRatio = (state) => {
+  return state.states.featuresList.splitPaneRatio;
+};
+
 export const getFilterHistory = createSelector((state) => state.states.featuresList,
   (states) => [...states.searchHistory]);
 
@@ -241,5 +254,6 @@ export const {
   liveFeatureActivated,
   liveUpdateReceived,
   toggleBoiler,
-  toggleTheme
+  toggleTheme,
+  setSplitPaneRatio
 } = slice.actions;

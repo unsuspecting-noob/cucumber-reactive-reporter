@@ -9,8 +9,10 @@ import {
   getPaginatorInfo,
   getSelectedFeatureId,
   getSelectedScenarioId,
+  getSplitPaneRatio,
   getTheme,
   scenarioSelected,
+  setSplitPaneRatio,
   selectionCleared
 } from "../store/uistates";
 import {
@@ -29,6 +31,7 @@ import FeatureContainer from "./FeatureContainer";
 import React from "react";
 import ScenarioStepsPanel from "./ScenarioStepsPanel";
 import { getAllScenariosForFeatureWithState } from "../store/scenarios";
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 const FEATURES_PER_PAGE = [50, 100, 30, 10];
 
@@ -48,10 +51,16 @@ const FeaturesList = () => {
   let themeName = useSelector((state) => getTheme(state));
   const selectedFeatureId = useSelector((state) => getSelectedFeatureId(state));
   const selectedScenarioId = useSelector((state) => getSelectedScenarioId(state));
+  const splitPaneRatio = useSelector((state) => getSplitPaneRatio(state));
+  const isDesktop = useMediaQuery("(min-width: 1200px)");
   const selectedScenarios = useSelector((state) =>
     getAllScenariosForFeatureWithState(state, { id: selectedFeatureId })
   );
   const splitMode = Boolean(selectedFeatureId);
+  const splitContainerRef = React.useRef(null);
+  const dragStateRef = React.useRef(null);
+  const moveHandlerRef = React.useRef(null);
+  const upHandlerRef = React.useRef(null);
 
   switch (displayFeaturesToggleState) {
     case FeaturesToggleValuesEnum.ALL:
@@ -108,6 +117,66 @@ const FeaturesList = () => {
     dispatch(selectionCleared());
   };
 
+  const handleDividerPointerDown = (event) => {
+    if (!splitContainerRef.current) {
+      return;
+    }
+    event.preventDefault();
+    const rect = splitContainerRef.current.getBoundingClientRect();
+    dragStateRef.current = {
+      startX: event.clientX,
+      width: rect.width,
+      startRatio: splitPaneRatio
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    const handlePointerMove = (moveEvent) => {
+      if (!dragStateRef.current) {
+        return;
+      }
+      const { startX, width, startRatio } = dragStateRef.current;
+      const delta = moveEvent.clientX - startX;
+      const startPx = (startRatio / 100) * width;
+      const nextRatio = ((startPx + delta) / width) * 100;
+      dispatch(setSplitPaneRatio({ value: nextRatio }));
+    };
+    const handlePointerUp = () => {
+      dragStateRef.current = null;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      if (moveHandlerRef.current) {
+        window.removeEventListener("pointermove", moveHandlerRef.current);
+        moveHandlerRef.current = null;
+      }
+      if (upHandlerRef.current) {
+        window.removeEventListener("pointerup", upHandlerRef.current);
+        window.removeEventListener("pointercancel", upHandlerRef.current);
+        upHandlerRef.current = null;
+      }
+    };
+    moveHandlerRef.current = handlePointerMove;
+    upHandlerRef.current = handlePointerUp;
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (moveHandlerRef.current) {
+        window.removeEventListener("pointermove", moveHandlerRef.current);
+        moveHandlerRef.current = null;
+      }
+      if (upHandlerRef.current) {
+        window.removeEventListener("pointerup", upHandlerRef.current);
+        window.removeEventListener("pointercancel", upHandlerRef.current);
+        upHandlerRef.current = null;
+      }
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, []);
+
   let totalPages = Math.ceil(features.length / pSize);
   /**
    * bug fix: if you filter to see all, and there is a failed scenario in some featureList on page2,
@@ -141,34 +210,84 @@ const FeaturesList = () => {
       <Box sx={{ px: 1, pb: 1, pt: 1 }}>
         <Stack direction="column">
           {splitMode ? (
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1fr) minmax(0, 1fr)" },
-                gap: 1,
-                alignItems: "start"
-              }}
-            >
-              <Stack direction="column" spacing={1} sx={{ minWidth: 0 }}>
-                {featureNodes}
-              </Stack>
+            isDesktop ? (
               <Box
+                ref={splitContainerRef}
                 sx={{
-                  position: { xs: "static", lg: "sticky" },
-                  top: { lg: "var(--reporter-header-height, 96px)" },
-                  alignSelf: "start",
-                  minWidth: 0,
-                  maxHeight: { lg: "calc(100vh - var(--reporter-header-height, 96px) - 16px)" },
-                  overflow: { lg: "auto" },
-                  overscrollBehavior: "contain"
+                  display: "flex",
+                  alignItems: "stretch",
+                  gap: 0,
+                  minWidth: 0
                 }}
               >
-                <ScenarioStepsPanel
-                  scenarioId={selectedScenarioId}
-                  onClearSelection={handleSelectionClear}
+                <Stack
+                  direction="column"
+                  spacing={1}
+                  sx={{
+                    minWidth: 0,
+                    flexBasis: `${splitPaneRatio}%`,
+                    flexGrow: 0,
+                    flexShrink: 0,
+                    pr: 1
+                  }}
+                >
+                  {featureNodes}
+                </Stack>
+                <Box
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label="Resize panes"
+                  onPointerDown={handleDividerPointerDown}
+                  sx={{
+                    width: 8,
+                    mx: 0.5,
+                    cursor: "col-resize",
+                    borderRadius: 1,
+                    backgroundColor: "divider",
+                    "&:hover": {
+                      backgroundColor: "text.secondary"
+                    }
+                  }}
                 />
+                <Box
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    position: "sticky",
+                    top: "var(--reporter-header-height, 96px)",
+                    alignSelf: "start",
+                    maxHeight: "calc(100vh - var(--reporter-header-height, 96px) - 16px)",
+                    overflow: "auto",
+                    overscrollBehavior: "contain",
+                    pl: 1
+                  }}
+                >
+                  <ScenarioStepsPanel
+                    scenarioId={selectedScenarioId}
+                    onClearSelection={handleSelectionClear}
+                  />
+                </Box>
               </Box>
-            </Box>
+            ) : (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr",
+                  gap: 1,
+                  alignItems: "start"
+                }}
+              >
+                <Stack direction="column" spacing={1} sx={{ minWidth: 0 }}>
+                  {featureNodes}
+                </Stack>
+                <Box sx={{ minWidth: 0 }}>
+                  <ScenarioStepsPanel
+                    scenarioId={selectedScenarioId}
+                    onClearSelection={handleSelectionClear}
+                  />
+                </Box>
+              </Box>
+            )
           ) : (
             <Stack direction="column" spacing={1}>
               {featureNodes}
