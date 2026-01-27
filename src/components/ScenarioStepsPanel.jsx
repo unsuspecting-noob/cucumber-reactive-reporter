@@ -27,15 +27,20 @@ const ScenarioStepsPanel = ({ scenarioId, onClearSelection }) => {
 
   if (!scenario) {
     return (
-      <Paper elevation={2} sx={{ padding: 2, minHeight: "50vh" }}>
+      <Paper elevation={2} sx={{ padding: 2, minHeight: "50vh", position: "relative" }}>
+        {onClearSelection ? (
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={onClearSelection}
+            sx={{ position: "absolute", top: 8, right: 8 }}
+          >
+            Close
+          </Button>
+        ) : null}
         <Stack direction="column" spacing={2}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">Scenario Details</Typography>
-            {onClearSelection ? (
-              <Button variant="outlined" size="small" onClick={onClearSelection}>
-                Back to list
-              </Button>
-            ) : null}
           </Stack>
           <Typography variant="body2" color="text.secondary">
             Select a scenario to view step details.
@@ -52,25 +57,51 @@ const ScenarioStepsPanel = ({ scenarioId, onClearSelection }) => {
   ];
 
   return (
-    <Paper elevation={2} sx={{ padding: 2, minHeight: "50vh" }}>
+    <Paper elevation={2} sx={{ padding: 2, minHeight: "50vh", position: "relative" }}>
+      {onClearSelection ? (
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={onClearSelection}
+          sx={{ position: "absolute", top: 8, right: 8 }}
+        >
+          Close
+        </Button>
+      ) : null}
       <Stack direction="column" spacing={2}>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Box>
             <Typography variant="overline" color="text.secondary">
               Scenario
             </Typography>
-            <Typography variant="h6">{scenario.name}</Typography>
+            {scenario.tags?.length ? (
+              <Typography
+                variant="capture"
+                align="left"
+                style={{
+                  minHeight: "1vh",
+                  fontStyle: "italic",
+                  fontSize: "1.3vmin",
+                  fontWeight: "bold",
+                  color: purple[400]
+                }}
+              >
+                <Stack direction="row" spacing="10px">
+                  {scenario.tags.map((tag) => (
+                    <div key={tag.name}>{tag.name}</div>
+                  ))}
+                </Stack>
+              </Typography>
+            ) : null}
+            <Typography variant="h6">
+              {scenario.name}
+            </Typography>
             {feature ? (
-              <Typography variant="caption" color="text.secondary">
-                {feature.name} • {feature.uri}
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: "1rem" }}>
+                {feature.name}
               </Typography>
             ) : null}
           </Box>
-          {onClearSelection ? (
-            <Button variant="outlined" size="small" onClick={onClearSelection}>
-              Back to list
-            </Button>
-          ) : null}
         </Stack>
 
         <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -78,26 +109,6 @@ const ScenarioStepsPanel = ({ scenarioId, onClearSelection }) => {
             <Chip key={chip.label} size="small" color={chip.color} label={chip.label} />
           ))}
         </Stack>
-
-        {scenario.tags?.length ? (
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            {scenario.tags.map((tag) => (
-              <Chip
-                key={tag.name}
-                size="small"
-                label={tag.name}
-                variant="filled"
-                sx={{
-                  color: purple[400],
-                  backgroundColor: "transparent",
-                  border: "none",
-                  borderRadius: 1,
-                  px: 0.25
-                }}
-              />
-            ))}
-          </Stack>
-        ) : null}
 
         <Divider />
 

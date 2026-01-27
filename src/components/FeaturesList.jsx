@@ -61,6 +61,7 @@ const FeaturesList = () => {
   const dragStateRef = React.useRef(null);
   const moveHandlerRef = React.useRef(null);
   const upHandlerRef = React.useRef(null);
+  const resizeHandleWidth = 8;
 
   switch (displayFeaturesToggleState) {
     case FeaturesToggleValuesEnum.ALL:
@@ -117,7 +118,7 @@ const FeaturesList = () => {
     dispatch(selectionCleared());
   };
 
-  const handleDividerPointerDown = (event) => {
+  const handleResizePointerDown = (event) => {
     if (!splitContainerRef.current) {
       return;
     }
@@ -234,22 +235,8 @@ const FeaturesList = () => {
                   {featureNodes}
                 </Stack>
                 <Box
-                  role="separator"
-                  aria-orientation="vertical"
-                  aria-label="Resize panes"
-                  onPointerDown={handleDividerPointerDown}
-                  sx={{
-                    width: 8,
-                    mx: 0.5,
-                    cursor: "col-resize",
-                    borderRadius: 1,
-                    backgroundColor: "divider",
-                    "&:hover": {
-                      backgroundColor: "text.secondary"
-                    }
-                  }}
-                />
-                <Box
+                  role="region"
+                  aria-label="Scenario details panel"
                   sx={{
                     flex: 1,
                     minWidth: 0,
@@ -257,15 +244,42 @@ const FeaturesList = () => {
                     top: "var(--reporter-header-height, 96px)",
                     alignSelf: "start",
                     maxHeight: "calc(100vh - var(--reporter-header-height, 96px) - 16px)",
-                    overflow: "auto",
-                    overscrollBehavior: "contain",
-                    pl: 1
+                    overflow: "hidden",
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: 0
                   }}
                 >
-                  <ScenarioStepsPanel
-                    scenarioId={selectedScenarioId}
-                    onClearSelection={handleSelectionClear}
+                  <Box
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label="Resize panes"
+                    onPointerDown={handleResizePointerDown}
+                    sx={{
+                      position: "absolute",
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: resizeHandleWidth,
+                      cursor: "col-resize",
+                      touchAction: "none",
+                      zIndex: 1
+                    }}
                   />
+                  <Box
+                    sx={{
+                      flex: 1,
+                      minHeight: 0,
+                      overflow: "auto",
+                      overscrollBehavior: "contain",
+                      pl: 1
+                    }}
+                  >
+                    <ScenarioStepsPanel
+                      scenarioId={selectedScenarioId}
+                      onClearSelection={handleSelectionClear}
+                    />
+                  </Box>
                 </Box>
               </Box>
             ) : (
