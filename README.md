@@ -61,6 +61,8 @@ options.linkTags = linkTags;
 - `cucumberVersion`: optional version hint to pick attachment decoding behavior.
 - `live`: enable incremental updates for message streams; requires `inputFormat: "message"`.
   - Example: `live: { enabled: true, pollIntervalMs: 2000, flushIntervalMs: 1000 }`.
+  - `bootstrapDispatchMs`: throttle UI updates while bootstrapping NDJSON (default 200).
+  - `bootstrapChunkBytes`: chunk size used when bootstrapping NDJSON (default 262144).
 
 ### See sample in action:
 [link](https://unsuspecting-noob.github.io/cucumber-reactive-reporter/index.html)

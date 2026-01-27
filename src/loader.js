@@ -1,6 +1,7 @@
 import { liveUpdateReceived, loadDataFinished, settingsLoaded } from "./store/uistates";
 import { createMessageStateBuilder } from "./parser/cucumberMessageAdapter.mjs";
 import { createStreamingDecoder } from "./utils/ndjsonDecoder";
+import { createNdjsonBuffer } from "./utils/ndjsonBuffer";
 
 export default async (store) => {
   let metadata;
@@ -117,35 +118,93 @@ const startMessagePolling = (store, liveOptions, fallbackToState) => {
   const guard = createLiveGuard();
   let inFlight = false;
   let offset = 0;
-  let buffer = "";
   let missingCount = 0;
   let builder = createMessageStateBuilder({
     attachmentsEncoding: liveOptions?.attachmentsEncoding
   });
   const decoder = createStreamingDecoder();
+  const ndjsonBuffer = createNdjsonBuffer({
+    onItem: (envelope) => builder.ingest(envelope),
+    onError: (err) => {
+      console.warn(JSON.stringify({
+        level: "warn",
+        code: "live-message-parse-failed",
+        message: err.message
+      }));
+    }
+  });
 
-  const applyChunk = (chunk) => {
-    let applied = 0;
-    buffer += chunk;
-    const lines = buffer.split(/\r?\n/);
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) {
-        continue;
+  const resetParser = () => {
+    ndjsonBuffer.reset();
+    builder = createMessageStateBuilder({
+      attachmentsEncoding: liveOptions?.attachmentsEncoding
+    });
+    decoder.reset();
+  };
+
+  const dispatchLiveState = () => {
+    store.dispatch({ type: "reporter/stateReplaced", payload: builder.buildState() });
+    store.dispatch(liveUpdateReceived({ timestamp: Date.now() }));
+  };
+
+  const bootstrapMessageStream = async () => {
+    const response = await fetch(messagePath, { cache: "no-store" });
+    if (!response.ok) {
+      if (response.status === 404) {
+        return;
       }
-      try {
-        builder.ingest(JSON.parse(trimmed));
-        applied += 1;
-      } catch (err) {
-        console.warn(JSON.stringify({
-          level: "warn",
-          code: "live-message-parse-failed",
-          message: err.message
-        }));
+      throw new Error(`message bootstrap failed: ${response.status}`);
+    }
+    const dispatchIntervalMs = Math.max(50, Number(liveOptions?.bootstrapDispatchMs) || 200);
+    const chunkSize = Math.max(4096, Number(liveOptions?.bootstrapChunkBytes) || 262144);
+    let lastDispatchAt = Date.now();
+    let appliedSinceDispatch = 0;
+    let bytesRead = 0;
+    const reader = response.body && response.body.getReader ? response.body.getReader() : null;
+
+    if (reader) {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          break;
+        }
+        if (value) {
+          bytesRead += value.byteLength;
+          const decoded = decoder.decode(value);
+          appliedSinceDispatch += ndjsonBuffer.push(decoded);
+          const now = Date.now();
+          if (appliedSinceDispatch > 0 && now - lastDispatchAt >= dispatchIntervalMs) {
+            dispatchLiveState();
+            appliedSinceDispatch = 0;
+            lastDispatchAt = now;
+          }
+        }
+      }
+    } else {
+      const bytes = await response.arrayBuffer();
+      const total = bytes.byteLength;
+      let start = 0;
+      while (start < total) {
+        const end = Math.min(start + chunkSize, total);
+        const slice = bytes.slice(start, end);
+        bytesRead += slice.byteLength;
+        const decoded = decoder.decode(slice);
+        appliedSinceDispatch += ndjsonBuffer.push(decoded);
+        const now = Date.now();
+        if (appliedSinceDispatch > 0 && now - lastDispatchAt >= dispatchIntervalMs) {
+          dispatchLiveState();
+          appliedSinceDispatch = 0;
+          lastDispatchAt = now;
+        }
+        start = end;
       }
     }
-    return applied;
+    appliedSinceDispatch += ndjsonBuffer.push(decoder.flush());
+    appliedSinceDispatch += ndjsonBuffer.flush();
+    if (appliedSinceDispatch > 0) {
+      dispatchLiveState();
+    }
+    offset = bytesRead;
   };
 
   const poll = async () => {
@@ -181,25 +240,20 @@ const startMessagePolling = (store, liveOptions, fallbackToState) => {
       let applied = 0;
       if (response.status === 206) {
         const decoded = decoder.decode(bytes);
-        applied = applyChunk(decoded);
+        applied = ndjsonBuffer.push(decoded);
         offset += bytes.byteLength;
       } else {
         if (offset > 0 && bytes.byteLength < offset) {
           offset = 0;
-          buffer = "";
-          builder = createMessageStateBuilder({
-            attachmentsEncoding: liveOptions?.attachmentsEncoding
-          });
-          decoder.reset();
+          resetParser();
         }
         const slice = offset > 0 ? bytes.slice(offset) : bytes;
         const decoded = decoder.decode(slice);
-        applied = applyChunk(decoded);
+        applied = ndjsonBuffer.push(decoded);
         offset = bytes.byteLength;
       }
       if (applied > 0) {
-        store.dispatch({ type: "reporter/stateReplaced", payload: builder.buildState() });
-        store.dispatch(liveUpdateReceived({ timestamp: Date.now() }));
+        dispatchLiveState();
       }
     } catch (err) {
       console.warn(JSON.stringify({
@@ -212,6 +266,17 @@ const startMessagePolling = (store, liveOptions, fallbackToState) => {
     }
   };
 
-  poll();
-  setInterval(poll, pollIntervalMs);
+  (async () => {
+    try {
+      await bootstrapMessageStream();
+    } catch (err) {
+      console.warn(JSON.stringify({
+        level: "warn",
+        code: "live-message-bootstrap-failed",
+        message: err.message
+      }));
+    }
+    poll();
+    setInterval(poll, pollIntervalMs);
+  })();
 };

@@ -380,7 +380,9 @@ const normalizeLiveOptions = (live) => {
             pollIntervalMs: 2000,
             idleTimeoutMs: 0,
             stopOnTestRunFinished: true,
-            source: "message"
+            source: "message",
+            bootstrapDispatchMs: 200,
+            bootstrapChunkBytes: 262144
         };
     }
     return {
@@ -389,7 +391,9 @@ const normalizeLiveOptions = (live) => {
         pollIntervalMs: live.pollIntervalMs ?? 2000,
         idleTimeoutMs: live.idleTimeoutMs ?? 0,
         stopOnTestRunFinished: live.stopOnTestRunFinished !== false,
-        source: live.source
+        source: live.source,
+        bootstrapDispatchMs: live.bootstrapDispatchMs,
+        bootstrapChunkBytes: live.bootstrapChunkBytes
     };
 };
 

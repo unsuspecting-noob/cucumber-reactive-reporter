@@ -11,7 +11,7 @@
 /**
  * Create a streaming UTF-8 decoder for NDJSON byte chunks.
  * Arguments: none.
- * Returns: `{ decode, reset }` helpers for streaming decoding.
+ * Returns: `{ decode, flush, reset }` helpers for streaming decoding.
  * Raises: Error when `TextDecoder` is unavailable.
  * Examples:
  *   const decoder = createStreamingDecoder();
@@ -26,6 +26,7 @@ export const createStreamingDecoder = () => {
 
   return {
     decode: (chunk) => decoder.decode(chunk, { stream: true }),
+    flush: () => decoder.decode(new Uint8Array(), { stream: false }),
     reset: () => {
       decoder = new TextDecoder("utf-8");
     }

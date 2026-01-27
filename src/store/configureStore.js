@@ -12,14 +12,50 @@ import thunk from "redux-thunk";
 
 export default async function () {
   let preloadedState;
+  let settings;
+
+  const createEmptyReportState = () => ({
+    features: {
+      list: [],
+      featuresMap: {}
+    },
+    scenarios: {
+      list: [],
+      scenariosMap: {}
+    },
+    steps: {
+      stepsMap: {},
+      totalDurationNanoSec: 0
+    }
+  });
+
+  const resolveTransport = (metadata) => {
+    const liveOptions = metadata?.live ?? {};
+    return liveOptions.source ?? (metadata?.inputFormat === "message" ? "message" : "state");
+  };
+
   try {
-    console.time("loadJSON")
-    let response = await fetch("./_cucumber-results.json", { cache: "no-store" });
-    preloadedState = await response.json();
-    console.timeEnd("loadJSON")
+    let settingsResponse = await fetch("./_reporter_settings.json", { cache: "no-store" });
+    settings = await settingsResponse.json();
   } catch (err) {
     console.log("ERROR: ", err);
-    //not sure
+  }
+  const transport = resolveTransport(settings);
+  const shouldSkipPreload = Boolean(settings?.live?.enabled) && transport === "message";
+
+  if (!shouldSkipPreload) {
+    try {
+      console.time("loadJSON");
+      let response = await fetch("./_cucumber-results.json", { cache: "no-store" });
+      preloadedState = await response.json();
+      console.timeEnd("loadJSON");
+    } catch (err) {
+      console.log("ERROR: ", err);
+    }
+  }
+
+  if (!preloadedState) {
+    preloadedState = createEmptyReportState();
   }
 
   let appReducer = combineReducers({
