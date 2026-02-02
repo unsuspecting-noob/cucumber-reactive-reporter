@@ -554,7 +554,7 @@ const buildScenarioSteps = (acc, testCase, pickle, uri, options) => {
         keyword: gherkinStep?.keyword ?? "",
         line,
         location: resolveLocation(uri, line),
-        name: gherkinStep?.text ?? pickleStep?.text ?? "",
+        name: pickleStep?.text ?? gherkinStep?.text ?? "",
         status
       });
     } else if (testStep.hookId) {
