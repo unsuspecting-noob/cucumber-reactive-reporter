@@ -236,6 +236,67 @@ const loadStoreState = async (
     return prepareStoreState(parsed, { inputFormat, attachmentsEncoding, cucumberVersion });
 };
 
+// Keep this in sync with cucumber-js envelope emitters and gherkin-stream output.
+const MESSAGE_ENVELOPE_KEYS = [
+    "meta",
+    "source",
+    "gherkinDocument",
+    "pickle",
+    "parseError",
+    "stepDefinition",
+    "hook",
+    "parameterType",
+    "undefinedParameterType",
+    "suggestion",
+    "testCase",
+    "testCaseStarted",
+    "testCaseFinished",
+    "testStepStarted",
+    "testStepFinished",
+    "attachment",
+    "testRunStarted",
+    "testRunFinished",
+    "testRunHookStarted",
+    "testRunHookFinished"
+];
+
+const findRecoverableEnvelopes = (line) => {
+    const trimmedLine = String(line || "").trim();
+    if (!trimmedLine) {
+        return [];
+    }
+
+    const envelopeStarts = [];
+    const startPattern = new RegExp(
+        String.raw`\{"(?:${MESSAGE_ENVELOPE_KEYS.join("|")})"\s*:`,
+        "g"
+    );
+    let match = null;
+    while ((match = startPattern.exec(trimmedLine)) !== null) {
+        envelopeStarts.push(match.index);
+    }
+    if (envelopeStarts.length === 0) {
+        return [];
+    }
+
+    const recovered = [];
+    for (let i = 0; i < envelopeStarts.length; i += 1) {
+        const start = envelopeStarts[i];
+        const end = i + 1 < envelopeStarts.length ? envelopeStarts[i + 1] : trimmedLine.length;
+        const candidate = trimmedLine.slice(start, end).trim();
+        if (!candidate) {
+            continue;
+        }
+        try {
+            recovered.push(JSON.parse(candidate));
+        } catch {
+            // Ignore invalid fragments and continue scanning for a valid envelope.
+        }
+    }
+
+    return recovered;
+};
+
 const readMessageEnvelopes = async function* (source) {
     const stream = fs.createReadStream(source, { encoding: "utf8" });
     const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
@@ -251,9 +312,33 @@ const readMessageEnvelopes = async function* (source) {
             try {
                 yield JSON.parse(trimmed);
             } catch (err) {
-                throw new Error(
-                    `Invalid message NDJSON in ${source} at line ${lineNumber}: ${err.message}`
+                const recovered = findRecoverableEnvelopes(trimmed);
+                if (recovered.length > 0) {
+                    console.warn(
+                        JSON.stringify({
+                            level: "warn",
+                            code: "message-ndjson-recovered-line",
+                            source,
+                            lineNumber,
+                            recoveredCount: recovered.length,
+                            error: err.message
+                        })
+                    );
+                    for (const envelope of recovered) {
+                        yield envelope;
+                    }
+                    continue;
+                }
+                console.warn(
+                    JSON.stringify({
+                        level: "warn",
+                        code: "message-ndjson-skipped-line",
+                        source,
+                        lineNumber,
+                        error: err.message
+                    })
                 );
+                continue;
             }
         }
     } finally {
@@ -311,9 +396,36 @@ const followMessageEnvelopes = async function* (
                     try {
                         envelope = JSON.parse(trimmed);
                     } catch (err) {
-                        throw new Error(
-                            `Invalid message NDJSON in ${source} at line ${lineNumber}: ${err.message}`
+                        const recovered = findRecoverableEnvelopes(trimmed);
+                        if (recovered.length > 0) {
+                            console.warn(
+                                JSON.stringify({
+                                    level: "warn",
+                                    code: "message-ndjson-recovered-line",
+                                    source,
+                                    lineNumber,
+                                    recoveredCount: recovered.length,
+                                    error: err.message
+                                })
+                            );
+                            for (const recoveredEnvelope of recovered) {
+                                yield recoveredEnvelope;
+                                if (stopOnFinish && recoveredEnvelope.testRunFinished) {
+                                    return;
+                                }
+                            }
+                            continue;
+                        }
+                        console.warn(
+                            JSON.stringify({
+                                level: "warn",
+                                code: "message-ndjson-skipped-line",
+                                source,
+                                lineNumber,
+                                error: err.message
+                            })
                         );
+                        continue;
                     }
                     yield envelope;
                     if (stopOnFinish && envelope.testRunFinished) {
