@@ -7,7 +7,12 @@ import '@fontsource/roboto/700.css';
 
 import * as serviceWorker from "./serviceWorker";
 
-import { getFeaturesToggleValue, getLastEnteredSearchValue } from "./store/uistates";
+import {
+  getFeaturesToggleValue,
+  getLastEnteredSearchValue,
+  getSelectedFeatureId,
+  getSelectedScenarioId
+} from "./store/uistates";
 
 import App from "./App";
 import { Provider } from "react-redux";
@@ -21,6 +26,8 @@ let store;
 
 //Configure url params for "filter" to autosync to the store
 const buildQuerySyncParams = (state) => {
+  const selectedFeatureId = getSelectedFeatureId(state) ?? "";
+  const selectedScenarioId = getSelectedScenarioId(state) ?? "";
   return {
     filter: {
       action: value => ({
@@ -47,6 +54,30 @@ const buildQuerySyncParams = (state) => {
       selector: getLastEnteredSearchValue,
       stringToValue: string => string,
       valueToString: string => string
+    },
+    feature: {
+      action: value => ({
+        type: "states/featureSelected",
+        payload: {
+          id: value || null
+        }
+      }),
+      defaultValue: selectedFeatureId,
+      selector: getSelectedFeatureId,
+      stringToValue: string => string || null,
+      valueToString: value => value || ""
+    },
+    scenario: {
+      action: value => ({
+        type: "states/scenarioSelected",
+        payload: {
+          id: value || null
+        }
+      }),
+      defaultValue: selectedScenarioId,
+      selector: getSelectedScenarioId,
+      stringToValue: string => string || null,
+      valueToString: value => value || ""
     }
   };
 };

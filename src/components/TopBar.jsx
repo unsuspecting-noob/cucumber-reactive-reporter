@@ -1,7 +1,7 @@
 import '../overwriteStyles.css'
 
 import { Autocomplete, TextField } from "@mui/material";
-import { Box, Button, ButtonGroup, Chip, Container, Divider, FormControlLabel, FormGroup, Grid, Paper, Stack, Switch, Toolbar, Tooltip, Typography } from "@mui/material";
+import { Box, Button, ButtonGroup, Chip, Container, Divider, FormControlLabel, FormGroup, Paper, Stack, Switch, Toolbar, Tooltip, Typography } from "@mui/material";
 import {
     FeaturesToggleValuesEnum,
     displayMetadataButtonClicked,
@@ -282,101 +282,173 @@ const TopBar = ({
     //for the banner separating top bar and features
     const chip = `${numCurrentFeatures} ${numCurrentFeatures === 1 ? "Feature" : "Features"} and ${numCurrentScenarios} ${numCurrentScenarios === 1 ? "Scenario" : "Scenarios"}${displayFeaturesToggleState === FeaturesToggleValuesEnum.ALL ? ", " + numCurrentFailedFeatures + " failed features" : ""}`;
     return (
-        <Toolbar disableGutters>
+        <Toolbar disableGutters sx={{ pt: 0.2, pb: 0.2, minHeight: "unset", alignItems: "stretch" }}>
             <Container maxWidth="100%">
                 {/* <Box mt={1}> */}
 
-                <Grid container
-                    direction="row"
-                    justifyContent="center"
-                    alignItems="center"
-                    spacing={1}>
-                    <Grid item xs={2.5}>
-                        <Item elevation={3}>
-                            <Autocomplete
-                                freeSolo
-                                clearOnEscape
-                                autoComplete={false}
-                                autoSelect={true}
-                                fullWidth
-                                onChange={onChange}
-                                onInputChange={onInputChange}
-                                disableClearable
-                                placeholder="filter by tags"
-                                value={filterVal}
-                                options={options.map((opt) => opt.label)}
-                                renderInput={(params) => <TextField {...params}
-                                    inputRef={filterInputRef}
-                                    sx={{
-                                        "& .MuiInputBase-root": {
-                                            backgroundColor: themeName === "light" ? "#e0dad0" : "background.paper"
-                                        }
-                                    }}
-                                    label="filter by tags, ex.: @tag1 and not (@tag2 or @tag3)"
-                                    InputLabelProps={{
-                                        ...params.InputLabelProps,
-                                        shrink: true
-                                    }}
-                                    InputProps={{
-                                        ...params.InputProps,
-                                        type: "search"
-                                    }}
-                                />} />
-                        </Item>
-                    </Grid>
-                    <Grid item xs={1}>
-                        <ButtonGroup
-                            orientation="vertical">
-                            <Button variant="outlined" color="secondary" onClick={onTagHelpClick} size="small" startIcon={<AlternateEmailIcon />}>tags</Button>
-                            <Button variant="outlined" color="secondary" onClick={onMetadataClick} size="small" startIcon={<BookmarkBorderIcon />}>metadata</Button>
-                            {showLiveSidebarToggle ? (
-                                <Button
-                                    variant={liveSidebarOpen ? "contained" : "outlined"}
-                                    color="secondary"
-                                    onClick={onToggleLiveSidebar}
-                                    size="small"
-                                    startIcon={<ViewSidebarIcon />}
-                                >
-                                    live
-                                </Button>
-                            ) : null}
-                        </ButtonGroup>
-                    </Grid>
-                    {/* Title, date and duration here */}
-                    <Grid item xs={5} xl={5}>
-                        <Stack direction="column">
+                <Stack direction="column" spacing={0.25}>
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: { xs: "1fr", lg: "minmax(0,1fr) auto minmax(0,1fr)" },
+                            columnGap: 0.75,
+                            rowGap: 0.4,
+                            alignItems: "start"
+                        }}
+                    >
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="flex-start"
+                            justifyContent="flex-start"
+                            sx={{
+                                minWidth: 0,
+                                mt: 0.6
+                            }}
+                        >
+                            <Box sx={{ flex: "1 1 360px", minWidth: 180, maxWidth: 500 }}>
+                                <Item elevation={3}>
+                                    <Autocomplete
+                                        freeSolo
+                                        clearOnEscape
+                                        autoComplete={false}
+                                        autoSelect={true}
+                                        fullWidth
+                                        onChange={onChange}
+                                        onInputChange={onInputChange}
+                                        disableClearable
+                                        placeholder="filter by tags"
+                                        value={filterVal}
+                                        options={options.map((opt) => opt.label)}
+                                        renderInput={(params) => <TextField {...params}
+                                            size="small"
+                                            inputRef={filterInputRef}
+                                            sx={{
+                                                "& .MuiInputBase-root": {
+                                                    backgroundColor: themeName === "light" ? "#e0dad0" : "background.paper"
+                                                },
+                                                "& .MuiInputBase-input": {
+                                                    paddingTop: "9px",
+                                                    paddingBottom: "9px"
+                                                },
+                                                "& .MuiFormLabel-root": {
+                                                    fontSize: "0.82rem"
+                                                }
+                                            }}
+                                            label="filter by tags, ex.: @tag1 and not (@tag2 or @tag3)"
+                                            InputLabelProps={{
+                                                ...params.InputLabelProps,
+                                                shrink: true
+                                            }}
+                                            InputProps={{
+                                                ...params.InputProps,
+                                                type: "search"
+                                            }}
+                                        />} />
+                                </Item>
+                            </Box>
+                            <ButtonGroup
+                                orientation="vertical"
+                                sx={{
+                                    "& .MuiButton-root": {
+                                        py: 0.35,
+                                        minHeight: "30px"
+                                    }
+                                }}
+                            >
+                                <Button variant="outlined" color="secondary" onClick={onTagHelpClick} size="small" startIcon={<AlternateEmailIcon />}>tags</Button>
+                                <Button variant="outlined" color="secondary" onClick={onMetadataClick} size="small" startIcon={<BookmarkBorderIcon />}>metadata</Button>
+                                {showLiveSidebarToggle ? (
+                                    <Button
+                                        variant={liveSidebarOpen ? "contained" : "outlined"}
+                                        color="secondary"
+                                        onClick={onToggleLiveSidebar}
+                                        size="small"
+                                        startIcon={<ViewSidebarIcon />}
+                                    >
+                                        live
+                                    </Button>
+                                ) : null}
+                            </ButtonGroup>
+                        </Stack>
+
+                        <Stack
+                            direction="column"
+                            spacing={0}
+                            alignItems="center"
+                            justifyContent="center"
+                            sx={{
+                                textAlign: "center",
+                                mt: 0.1,
+                                minWidth: { xs: 0, lg: 240 },
+                                justifySelf: { xs: "start", lg: "center" }
+                            }}
+                        >
                             {settings.title ? (
-                                <Divider variant="fullWidth" color={titleChipColor}><Chip label={`${settings.title}, ${duration_str}`} variant="outlined" size="medium" color={titleChipColor} /></Divider>
+                                <Chip label={`${settings.title}, ${duration_str}`} variant="outlined" size="small" color={titleChipColor} />
                             ) : null}
                             {settings.description ? (
-                                <div style={{
-                                    margin: "10px",
-                                    display: "flex",
-                                    justifyContent: "center",
-                                    alignItems: "center"
-                                }}>{settings.description}</div>
+                                <Box
+                                    sx={{
+                                        mt: 0.12,
+                                        lineHeight: 1.1,
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        alignItems: "center"
+                                    }}
+                                >
+                                    {settings.description}
+                                </Box>
                             ) : null}
                         </Stack>
-                    </Grid>
-                    <Grid item xs={1.5} xl={1.5} justifyContent="flex-end">
-                        <TestSelectorButton />
-                    </Grid>
-                    <Grid item xs={1} justifyContent="flex-end">
-                        <FormGroup>
-                            <FormControlLabel control={<Switch size="small" checked={themeName === "dark"} onChange={handleThemeChange} />} label="theme" />
-                            <FormControlLabel control={<Tooltip title="Show or hide Before/After steps"><Switch size="small" checked={showExtraSteps === true} onChange={handleBoilerChange} /></Tooltip>} label="extra steps" />
-                        </FormGroup>
-                    </Grid>
-                    <Grid item xs={1}>
-                        <PieChart
-                            data={[
-                                { title: "Passed", value: numPassedScenarios, color: '#28a745' },
-                                { title: "Skipped", value: numSkippedScenarios, color: '#ffc107' },
-                                { title: "Failed", value: numFailedScenarios, color: '#dc3545' },
-                            ]}
-                            style={{ height: '4rem' }}
-                        />
-                    </Grid>
+
+                        <Stack
+                            direction="row"
+                            spacing={0.75}
+                            alignItems="center"
+                            justifyContent="flex-end"
+                            sx={{
+                                minWidth: 0,
+                                justifySelf: "end",
+                                flexWrap: "wrap",
+                                mt: 0.4
+                            }}
+                        >
+                            <Box sx={{ flexShrink: 0 }}>
+                                <TestSelectorButton />
+                            </Box>
+                            <FormGroup
+                                sx={{
+                                    "& .MuiFormControlLabel-root": {
+                                        margin: 0,
+                                        minHeight: "22px"
+                                    },
+                                    "& .MuiFormControlLabel-label": {
+                                        fontSize: "0.95rem",
+                                        lineHeight: 1
+                                    }
+                                }}
+                            >
+                                <FormControlLabel control={<Switch size="small" checked={themeName === "dark"} onChange={handleThemeChange} />} label="theme" />
+                                <FormControlLabel control={<Tooltip title="Show or hide Before/After steps"><Switch size="small" checked={showExtraSteps === true} onChange={handleBoilerChange} /></Tooltip>} label="extra steps" />
+                            </FormGroup>
+                            <Box sx={{ width: "3.6rem", height: "3.6rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <PieChart
+                                    data={[
+                                        { title: "Passed", value: numPassedScenarios, color: '#28a745' },
+                                        { title: "Skipped", value: numSkippedScenarios, color: '#ffc107' },
+                                        { title: "Failed", value: numFailedScenarios, color: '#dc3545' },
+                                    ]}
+                                    style={{ height: '3.6rem', width: '3.6rem' }}
+                                />
+                            </Box>
+                        </Stack>
+                    </Box>
+
+                    <Divider variant="middle" sx={{ mt: 0.05, mb: 0.1 }}>
+                        <Chip label={chip} variant="filled" style={{ fontSize: "1em" }} />
+                    </Divider>
+
                     {displayMetadataState ? (
                         <Stack direction="column">
                             <Divider variant="fullWidth" sx={{
@@ -386,7 +458,7 @@ const TopBar = ({
 
                             <Stack direction="column"
                                 spacing={0}
-                                alignItems="start"
+                                alignItems="flex-start"
                                 justifyContent="center"
                                 divider={<Divider orientation="horizontal" variant="fullWidth" flexItem />}
                                 sx={{ display: 'flex', flexWrap: 'wrap' }}
@@ -481,11 +553,10 @@ const TopBar = ({
                         </Stack>
                     ) : <React.Fragment />
                     }
-                </Grid>
-                <Divider variant="middle"><Chip label={chip} variant="filled" style={{ fontSize: "1.1em" }} /></Divider>
+                </Stack>
                 {paginationNode ? (
                     <React.Fragment>
-                        <Box sx={{ pt: 1 }}>
+                        <Box sx={{ pt: 0.2 }}>
                             {paginationNode}
                         </Box>
                         <Box sx={{ height: 8, backgroundColor: "transparent" }} />

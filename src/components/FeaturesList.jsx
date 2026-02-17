@@ -35,6 +35,29 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 
 const FEATURES_PER_PAGE = [50, 100, 30, 10];
 
+const updateSelectionQueryParams = (featureId, scenarioId) => {
+  if (typeof window === "undefined" || !window.history || !window.location) {
+    return;
+  }
+  try {
+    const url = new URL(window.location.href);
+    if (featureId) {
+      url.searchParams.set("feature", featureId);
+    } else {
+      url.searchParams.delete("feature");
+    }
+    if (scenarioId) {
+      url.searchParams.set("scenario", scenarioId);
+    } else {
+      url.searchParams.delete("scenario");
+    }
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState(window.history.state, "", nextUrl);
+  } catch (error) {
+    console.log("Unable to update URL selection params:", error);
+  }
+};
+
 const FeaturesList = () => {
   const dispatch = useDispatch();
   let features;
@@ -104,17 +127,21 @@ const FeaturesList = () => {
 
   const handleFeatureSelect = (id) => {
     if (selectedFeatureId === id) {
+      updateSelectionQueryParams(null, null);
       dispatch(selectionCleared());
       return;
     }
+    updateSelectionQueryParams(id, null);
     dispatch(featureSelected({ id }));
   };
 
   const handleScenarioSelect = (id) => {
+    updateSelectionQueryParams(selectedFeatureId, id);
     dispatch(scenarioSelected({ id }));
   };
 
   const handleSelectionClear = () => {
+    updateSelectionQueryParams(null, null);
     dispatch(selectionCleared());
   };
 

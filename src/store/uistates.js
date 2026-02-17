@@ -8,33 +8,68 @@ export const FeaturesToggleValuesEnum = Object.freeze({
   "SKIPPED": "Skipped"
 });
 
+const asObject = (value) => {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value;
+  }
+  return {};
+};
+
+export const INITIAL_UI_STATE = {
+  theme: "dark",
+  external_settings: {},
+  featuresList: {
+    featuresButtonToggleValue: FeaturesToggleValuesEnum.ALL,
+    lastEnteredSearchValue: "",
+    loading: true,
+    featureLoadProgress: 0,
+    finishedLoadingData: false,
+    searchHistory: [],
+    showBoiler: true,
+    liveActiveFeatureId: null,
+    selectedFeatureId: null,
+    selectedScenarioId: null,
+    tagsDisplay: false,
+    metadataDisplay: false,
+    splitPaneRatio: 55
+  },
+  liveStatus: {
+    lastUpdateAt: null
+  },
+  scenarioContainers: {},
+  stepContainers: {},
+  paginators: {}
+};
+
+export const buildUiState = (incomingState) => {
+  const state = asObject(incomingState);
+  return {
+    ...INITIAL_UI_STATE,
+    ...state,
+    featuresList: {
+      ...INITIAL_UI_STATE.featuresList,
+      ...asObject(state.featuresList)
+    },
+    liveStatus: {
+      ...INITIAL_UI_STATE.liveStatus,
+      ...asObject(state.liveStatus)
+    },
+    scenarioContainers: {
+      ...asObject(state.scenarioContainers)
+    },
+    stepContainers: {
+      ...asObject(state.stepContainers)
+    },
+    paginators: {
+      ...asObject(state.paginators)
+    }
+  };
+};
+
 //Reducers
 let slice = createSlice({
   name: "states",
-  initialState: {
-    theme: "dark",
-    external_settings: {},
-    featuresList: {
-      featuresButtonToggleValue: FeaturesToggleValuesEnum.ALL,
-      lastEnteredSearchValue: "",
-      loading: true,
-      featureLoadProgress: 0,
-      finishedLoadingData: false,
-      searchHistory: [],
-      showBoiler: true,
-      liveActiveFeatureId: null,
-      selectedFeatureId: null,
-      selectedScenarioId: null,
-      tagsDisplay: false,
-      metadataDisplay: false,
-      splitPaneRatio: 55
-    },
-    liveStatus: {
-      lastUpdateAt: null
-    },
-    scenarioContainers: {},
-    paginators: {}
-  },
+  initialState: INITIAL_UI_STATE,
   reducers: {
     loadFeaturesStarted: (states, action) => {
       states.featuresList.loading = true;
@@ -109,6 +144,18 @@ let slice = createSlice({
       }
       states.scenarioContainers[id].collapsed = !states.scenarioContainers[id].collapsed;
     },
+    stepContainerOpenSet: (states, action) => {
+      const scenarioId = action.payload?.scenarioId;
+      const stepKey = action.payload?.stepKey;
+      const open = action.payload?.open;
+      if (!scenarioId || !stepKey || typeof open !== "boolean") {
+        return;
+      }
+      if (!states.stepContainers[scenarioId]) {
+        states.stepContainers[scenarioId] = {};
+      }
+      states.stepContainers[scenarioId][stepKey] = open;
+    },
     featureSelected: (states, action) => {
       const id = action.payload?.id ?? null;
       if (states.featuresList.selectedFeatureId !== id) {
@@ -177,6 +224,11 @@ export const getDataLoadingFinished = (state) => {
 export const getScenarioContainerCollapsed = (state, props) => {
   const { id } = props;
   return state.states.scenarioContainers[id]?.collapsed;
+};
+
+export const getStepContainerOpen = (state, props) => {
+  const { scenarioId, stepKey } = props;
+  return state.states.stepContainers[scenarioId]?.[stepKey];
 };
 
 export const getPaginatorInfo = (state, props) => {
@@ -249,6 +301,7 @@ export const {
   paginatorChange,
   scenarioSelected,
   scenarioContainerClicked,
+  stepContainerOpenSet,
   selectionCleared,
   settingsLoaded,
   liveFeatureActivated,

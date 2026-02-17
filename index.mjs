@@ -10,7 +10,6 @@
 
 import { createRequire } from "module";
 import fs from "fs";
-import { link } from "fs/promises";
 import ncp from "ncp";
 import path from "path";
 import readline from "node:readline";
@@ -42,9 +41,9 @@ const modulePath = require.resolve("./package.json"); //trick to resolve path to
 */
 
 let cp = (source, destination, options) => {
-    options ? options : {};
+    options = options || {};
     return new Promise((resolve, reject) => {
-        ncp(source, destination, (err) => {
+        ncp(source, destination, options, (err) => {
             if (err) {
                 reject(new Error(err));
             }
@@ -52,6 +51,15 @@ let cp = (source, destination, options) => {
         })
     });
 }
+
+const copyReportAssets = async (htmlPath, destination, cucumberJsonPath, settingsPath) => {
+    await cp(htmlPath, destination, {
+        filter: (filePath) => {
+            const basename = path.basename(filePath);
+            return basename !== cucumberJsonPath && basename !== settingsPath;
+        }
+    });
+};
 
 const _makeSafe = (input) => {
     input = input.replace(/&/g, '&amp;');
@@ -171,10 +179,9 @@ const generate = async (source, dest, options) => {
     if (!destExists) {
         fs.mkdirSync(dest, { recursive: true });
     }
+    await copyReportAssets(HTML_PATH, dest, CUCUMBER_JSON_PATH, SETTINGS_JSON_PATH);
     fs.writeFileSync(path.join(dest, CUCUMBER_JSON_PATH), modifiedJSON);
     fs.writeFileSync(path.join(dest, SETTINGS_JSON_PATH), JSON.stringify(settings));
-
-    await cp(HTML_PATH, dest);
     patchIndexTitle(dest, title);
     console.log("done")
 
@@ -192,10 +199,9 @@ const generateLive = async ({
     liveOptions
 }) => {
     ensureDestination(dest);
+    await copyReportAssets(htmlPath, dest, cucumberJsonPath, settingsPath);
     writeJsonAtomic(path.join(dest, cucumberJsonPath), createEmptyState());
     fs.writeFileSync(path.join(dest, settingsPath), JSON.stringify(settings));
-
-    await cp(htmlPath, dest);
     patchIndexTitle(dest, title);
 
     const builder = createMessageStateBuilder({ attachmentsEncoding });
@@ -448,7 +454,16 @@ const followMessageEnvelopes = async function* (
 const patchIndexTitle = (dest, title) => {
     const indexPagePath = path.join(dest, "index.html");
     const htmlStr = fs.readFileSync(indexPagePath, "utf8").toString();
-    const modified = htmlStr.replace(/-=title=-/g, _makeSafe(title));
+    const cacheBustToken = Date.now();
+    const withTitle = htmlStr.replace(/-=title=-/g, _makeSafe(title));
+    const withCssBust = withTitle.replace(
+        /(static\/css\/main(?:\.[^"']+)?\.css)(\?[^"']*)?/g,
+        `$1?v=${cacheBustToken}`
+    );
+    const modified = withCssBust.replace(
+        /(static\/js\/main(?:\.[^"']+)?\.js)(\?[^"']*)?/g,
+        `$1?v=${cacheBustToken}`
+    );
     fs.writeFileSync(indexPagePath, modified, "utf8");
 };
 

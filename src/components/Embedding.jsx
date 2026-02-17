@@ -1,29 +1,21 @@
 import '../overwriteStyles.css'
 
 import { Box, Fab, Paper, Table, TableBody, TableCell, TableContainer, TableRow } from "@mui/material";
-import { makeStyles, useTheme } from '@mui/styles';
+import { useTheme } from '@mui/material/styles';
 
 import ContentCopy from '@mui/icons-material/ContentCopy';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import React from "react";
 import TextArea from './TextArea';
 import { blueGrey } from '@mui/material/colors';
-import clsx from 'clsx';
 import { commonCellStyle } from './styles/commonStyles';
 
-const useStyles = makeStyles({
-    clearHidden: {},
-    hiddenPin: {
-        display: "none"
-    },
-    root: {
-        "&:hover $clearHidden": {
-            display: "flex",
-            marginLeft: "-40",
-            position: "absolute"
-        }
-    }
-});
+const copyFabWrapperSx = {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    zIndex: 1
+};
 
 const buildEmbeddingSignature = (items) => {
     if (!Array.isArray(items)) {
@@ -47,7 +39,6 @@ const Embedding = (props) => {
     document.documentElement.style.setProperty("--scrollBarThumbCol", blueGrey[300]);
     document.documentElement.style.setProperty("--scrollBarThumbHoverCol", blueGrey[300]);
 
-    const classes = useStyles();
     let renderOne = (item, key) => {
         let value = item.media ? item.media : item.data;
         let _mime = item.mime_type ? item.mime_type : item.media?.type;
@@ -57,37 +48,37 @@ const Embedding = (props) => {
             case "text/html":
                 value = value.replace('\\n', '\n'); //really for html only
                 return (
-                    <TableRow key={key} hover className={classes.root}>
-                        <TableCell align="center" style={{ ...commonCellStyle }}>
+                    <TableRow key={key} hover>
+                        <TableCell align="center" style={{ ...commonCellStyle, position: "relative" }}>
+                            <Box sx={copyFabWrapperSx}>
+                                <CopyToClipboard text={value}>
+                                    <Fab color="primary" aria-label="copy to clipboard" size="small">
+                                        <ContentCopy />
+                                    </Fab>
+                                </CopyToClipboard>
+                            </Box>
                             <div dangerouslySetInnerHTML={{ __html: value }} style={{ maxWidth: "100%" }} />
-                        </TableCell>
-                        <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
-                            <CopyToClipboard text={value}>
-                                <Fab color="primary" aria-label="copy to clipboard" size="small">
-                                    <ContentCopy />
-                                </Fab>
-                            </CopyToClipboard>
                         </TableCell>
                     </TableRow>
                 )
             case "text/xml":
             case "application/xml":
                 return (
-                    <TableRow key={key} hover className={classes.root}>
-                        <TableCell align="center" style={{ ...commonCellStyle }}>
+                    <TableRow key={key} hover>
+                        <TableCell align="center" style={{ ...commonCellStyle, position: "relative" }}>
+                            <Box sx={copyFabWrapperSx}>
+                                <CopyToClipboard text={value}>
+                                    <Fab color="primary" aria-label="copy to clipboard" size="small">
+                                        <ContentCopy />
+                                    </Fab>
+                                </CopyToClipboard>
+                            </Box>
                             <TextArea
                                 content={value}
                                 type="xml"
                                 themeName={themeName}
                                 sourceKey={key}
                             />
-                        </TableCell>
-                        <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
-                            <CopyToClipboard text={value}>
-                                <Fab color="primary" aria-label="copy to clipboard" size="small">
-                                    <ContentCopy />
-                                </Fab>
-                            </CopyToClipboard>
                         </TableCell>
                     </TableRow>
                 )
@@ -102,8 +93,15 @@ const Embedding = (props) => {
                     value = e.message;
                 }
                 return (
-                    <TableRow key={key} hover className={classes.root}>
-                        <TableCell align="center" style={{ ...commonCellStyle }}>
+                    <TableRow key={key} hover>
+                        <TableCell align="center" style={{ ...commonCellStyle, position: "relative" }}>
+                            <Box sx={copyFabWrapperSx}>
+                                <CopyToClipboard text={value}>
+                                    <Fab color="primary" aria-label="copy to clipboard" size="small">
+                                        <ContentCopy />
+                                    </Fab>
+                                </CopyToClipboard>
+                            </Box>
                             <TextArea
                                 content={value}
                                 type="json"
@@ -111,18 +109,11 @@ const Embedding = (props) => {
                                 sourceKey={key}
                             />
                         </TableCell>
-                        <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
-                            <CopyToClipboard text={value}>
-                                <Fab color="primary" aria-label="copy to clipboard" size="small">
-                                    <ContentCopy />
-                                </Fab>
-                            </CopyToClipboard>
-                        </TableCell>
                     </TableRow>
                 )
             case "image/png":
                 return (
-                    <TableRow key={key} hover className={classes.root}>
+                    <TableRow key={key} hover>
                         <TableCell align="center" style={{ ...commonCellStyle }}>
                             {value ? <img src={`data:image/png;base64,${value}`}
                                 alt=""
@@ -132,28 +123,25 @@ const Embedding = (props) => {
                                 }}
                             /> : ''}
                         </TableCell>
-                        <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
-
-                        </TableCell>
                     </TableRow>
                 );
             case "text/plain":
             default:
                 return (
-                    <TableRow key={key} hover className={classes.root}>
-                        <TableCell align="center" style={{ ...commonCellStyle }}>
+                    <TableRow key={key} hover>
+                        <TableCell align="center" style={{ ...commonCellStyle, position: "relative" }}>
+                            <Box sx={copyFabWrapperSx}>
+                                <CopyToClipboard text={value}>
+                                    <Fab color="primary" aria-label="copy to clipboard" size="small">
+                                        <ContentCopy />
+                                    </Fab>
+                                </CopyToClipboard>
+                            </Box>
                             <TextArea
                                 content={value}
                                 themeName={themeName}
                                 sourceKey={key}
                             />
-                        </TableCell>
-                        <TableCell className={clsx(classes.hiddenPin, classes.clearHidden)} align="center" style={{ border: 'none', padding: 0 }}>
-                            <CopyToClipboard text={value}>
-                                <Fab color="primary" aria-label="copy to clipboard" size="small">
-                                    <ContentCopy />
-                                </Fab>
-                            </CopyToClipboard>
                         </TableCell>
                     </TableRow>
                 )
@@ -162,8 +150,8 @@ const Embedding = (props) => {
 
     return (
         <Box display="flex">
-            <TableContainer component={Paper} style={{ marginBottom: "10px", marginTop: "10px" }}>
-                <Table size="small" className={classes.table}>
+            <TableContainer component={Paper} style={{ marginBottom: "10px", marginTop: "10px", width: "100%" }}>
+                <Table size="small" sx={{ width: "100%", tableLayout: "fixed" }}>
                     <TableBody>
                         {data.map((item, index) => {
                             const key = sourceKey ? `${sourceKey}:${index}` : String(index);

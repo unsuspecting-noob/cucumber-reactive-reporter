@@ -18,8 +18,17 @@ const TextArea = (props) => {
         lineHeight: LINE_HEIGHT,
         minimap: { enabled: h > MAX_HEIGHT ? true : false, side: "left", maxColumn: 60 },
         readOnly: true,
+        wordWrap: "on",
+        wrappingIndent: "same",
         scrollBeyondLastLine: false,
-        scrollbar: { alwaysConsumeMouseWheel: false }
+        scrollbar: {
+            alwaysConsumeMouseWheel: false,
+            vertical: "hidden",
+            horizontal: "hidden",
+            useShadows: false,
+            verticalScrollbarSize: 0,
+            horizontalScrollbarSize: 0
+        }
     }
 
     let lang;

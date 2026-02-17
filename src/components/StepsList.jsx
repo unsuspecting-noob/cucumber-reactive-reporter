@@ -6,9 +6,9 @@ import {
 
 import React from "react";
 import StepContainer from "./StepContainer";
-import { getBoiler } from "../store/uistates";
+import { getBoiler, stepContainerOpenSet } from "../store/uistates";
 import { styled } from '@mui/material/styles';
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 const buildArgsSignature = (args) => {
   if (!Array.isArray(args)) {
@@ -74,6 +74,7 @@ const stepsEqual = (prevSteps, nextSteps) => {
 
 const StepsList = (props) => {
   const { id, themeName } = props;
+  const dispatch = useDispatch();
   let stepNumber = 1;
   const showExtra = useSelector((state) => getBoiler(state));
   const steps = useSelector(
@@ -82,15 +83,18 @@ const StepsList = (props) => {
       : getStepsNoBoilerByScenarioId(state, { id }),
     stepsEqual
   );
-  const [openMap, setOpenMap] = React.useState({});
-
-  React.useEffect(() => {
-    setOpenMap({});
-  }, [id]);
+  const openMap = useSelector((state) => state.states.stepContainers[id] ?? {});
 
   const getInitialOpen = (step) => {
     const word = String(step?.keyword ?? "").replace(/\s/g, "");
     return Boolean(step?.error_message || (word.toLowerCase() === "after" && step?.embeddings?.length));
+  };
+
+  const getStepKey = (step, index) => {
+    const keyword = String(step?.keyword ?? "").trim();
+    const name = String(step?.name ?? "").trim();
+    const location = String(step?.location ?? "").trim();
+    return `${index}:${keyword}:${name}:${location}`;
   };
 
   const Item = styled(Paper)(({ theme }) => ({
@@ -109,18 +113,22 @@ const StepsList = (props) => {
         <Table aria-label="collapsible table">
           <TableBody>
             {steps.map((s, index) => {
-              const key = `${id}:${index}`;
-              const isOpen = openMap[key];
+              const stepKey = getStepKey(s, index);
+              const isOpen = openMap[stepKey];
               const open = typeof isOpen === "boolean" ? isOpen : getInitialOpen(s);
               return (
                 <StepContainer
-                  key={key}
-                  stepKey={key}
+                  key={`${id}:${stepKey}`}
+                  stepKey={`${id}:${stepKey}`}
                   num={(s.keyword.toUpperCase().includes("BEFORE") || s.keyword.toUpperCase().includes("AFTER")) ? undefined : stepNumber++}
                   step={s}
                   themeName={themeName}
                   open={open}
-                  onToggle={(nextOpen) => setOpenMap((prev) => ({ ...prev, [key]: nextOpen }))}
+                  onToggle={(nextOpen) => dispatch(stepContainerOpenSet({
+                    scenarioId: id,
+                    stepKey,
+                    open: nextOpen
+                  }))}
                 />
               );
             })}
