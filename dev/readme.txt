@@ -1,5 +1,7 @@
 Some notes about development and maintainance:
 
+Node baseline is 24+.
+
 npm run start - runs local dev version for react development, this relies on Public folder to have _cucumber-results.json and _reporter_settings.json files to load the page.
 
 to generate _cucumber-results.json, place cucumber-results.json with cucumberjs output into public folder, then run "npm run testinstall" that will put the output into /test folder.
@@ -13,4 +15,3 @@ npm version patch/minor/major
 #npm run generatedist 
 clean up any dev files from dist:
 careful when publishing dist, it can have debug json files left from /public folder that can be used during development
-

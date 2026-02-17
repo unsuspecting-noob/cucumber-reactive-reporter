@@ -16,8 +16,7 @@ import { commonBoxStyles } from "./FeatureContainer";
 import {
   getScenarioById
 } from "../store/scenarios";
-import { styled } from '@mui/material/styles';
-import { useTheme } from '@mui/styles';
+import { styled, useTheme } from '@mui/material/styles';
 
 const ScenarioContainer = (props) => {
   const dispatch = useDispatch();

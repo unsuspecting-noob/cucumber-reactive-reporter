@@ -23,6 +23,11 @@ Here are some of the things that were deemed important to implement in this repo
 ```shell
 $ npm install cucumber-reactive-reporter
 ```
+
+## Development Baseline
+
+- Node.js: `>=24`
+
 ## Example usage:
 
 ```js

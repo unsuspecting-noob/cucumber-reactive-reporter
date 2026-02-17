@@ -12,7 +12,7 @@ import { getFeaturesToggleValue, getLastEnteredSearchValue } from "./store/uista
 import App from "./App";
 import { Provider } from "react-redux";
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import ReduxQuerySync from "redux-query-sync";
 import configureStore from "./store/configureStore";
 import loadData from "./loader";
@@ -20,37 +20,40 @@ import loadData from "./loader";
 let store;
 
 //Configure url params for "filter" to autosync to the store
-const params = {
-  filter: {
-    action: value => ({
-      type: "states/featuresToggleClicked",
-      payload: {
-        value: value,
-        type: "queryChanged"
-      }
-    }),
-    defaultValue: "",
-    selector: getFeaturesToggleValue,
-    stringToValue: string => string,
-    valueToString: string => string
-  },
-  tags: {
-    action: value => ({
-      type: "states/filterByTags",
-      payload: {
-        value: value,
-        type: "queryChanged"
-      }
-    }),
-    defaultValue: "",
-    selector: getLastEnteredSearchValue,
-    stringToValue: string => string,
-    valueToString: string => string
-  }
+const buildQuerySyncParams = (state) => {
+  return {
+    filter: {
+      action: value => ({
+        type: "states/featuresToggleClicked",
+        payload: {
+          value: value,
+          type: "queryChanged"
+        }
+      }),
+      defaultValue: getFeaturesToggleValue(state),
+      selector: getFeaturesToggleValue,
+      stringToValue: string => string,
+      valueToString: string => string
+    },
+    tags: {
+      action: value => ({
+        type: "states/filterByTags",
+        payload: {
+          value: value,
+          type: "queryChanged"
+        }
+      }),
+      defaultValue: getLastEnteredSearchValue(state),
+      selector: getLastEnteredSearchValue,
+      stringToValue: string => string,
+      valueToString: string => string
+    }
+  };
 };
 
 (async function renderWithInitialData() {
   store = await configureStore();
+  const params = buildQuerySyncParams(store.getState());
 
   ReduxQuerySync({
     initialTruth: "location",
@@ -61,13 +64,15 @@ const params = {
 
   await loadData(store);
 
-  ReactDOM.render(
+  const rootElement = document.getElementById("root");
+  const root = createRoot(rootElement);
+  root.render(
     <React.StrictMode>
       <Provider store={store}>
         <App />
       </Provider>
     </React.StrictMode>,
-    document.getElementById("root"))
+  )
 })()
 
 // ReactDOM.render(
