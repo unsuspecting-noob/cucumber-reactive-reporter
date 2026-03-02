@@ -53,10 +53,12 @@ let cp = (source, destination, options) => {
 }
 
 const copyReportAssets = async (htmlPath, destination, cucumberJsonPath, settingsPath) => {
+    // filter out any cucumber/settings json that may be bundled as sample data in the react template
+    const excludeFiles = [cucumberJsonPath, settingsPath, "cucumber-results.json", "cucumber-messages.ndjson"];
     await cp(htmlPath, destination, {
         filter: (filePath) => {
             const basename = path.basename(filePath);
-            return basename !== cucumberJsonPath && basename !== settingsPath;
+            return !excludeFiles.includes(basename);
         }
     });
 };

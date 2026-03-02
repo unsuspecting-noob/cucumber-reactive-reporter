@@ -24,10 +24,13 @@ const INCLUDE = ["package.json"]
  options.errs - stream. If options.stopOnErr is false, a stream can be provided, and errors will be written to this stream.
 */
 
+// files that should not be published - these are sample/test data used during development
+const EXCLUDE_FILES = ["cucumber-results.json", "_cucumber-results.json", "_reporter_settings.json"];
+
 let cp = (source, destination, options) => {
-    options ? options : {};
+    options = options || {};
     return new Promise((resolve, reject) => {
-        ncp(source, destination, (err) => {
+        ncp(source, destination, options, (err) => {
             if (err) {
                 reject(new Error(err));
             }
@@ -47,7 +50,9 @@ let copyBuild = async () => {
     if (!destExists) {
         await Fs.mkdir(dest, { recursive: true });
     }
-    await cp(BUILD_D, dest);
+    await cp(BUILD_D, dest, {
+        filter: (filePath) => !EXCLUDE_FILES.includes(path.basename(filePath))
+    });
 }
 
 let copyIncluded = async () => {
@@ -57,6 +62,6 @@ let copyIncluded = async () => {
 }
 
 let main = async function () {
-    await copyBuild(); //TODO: filter test files like _cucumber-results.json
+    await copyBuild();
     await copyIncluded();
 }();
