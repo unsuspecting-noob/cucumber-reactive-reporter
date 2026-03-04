@@ -42,3 +42,4 @@ __pycache__
 .venv
 *.egg-info
 dev/qa-jat-heimdall-*/
+.claude*
