@@ -1,8 +1,5 @@
-import { Box } from "@mui/material";
-import FormControl from '@mui/material/FormControl';
-import InputAdornment from '@mui/material/InputAdornment';
+import { Box, InputBase } from "@mui/material";
 import MenuItem from '@mui/material/MenuItem';
-import OutlinedInput from '@mui/material/OutlinedInput';
 import Pagination from "@mui/material/Pagination";
 import React from "react";
 import Select from '@mui/material/Select';
@@ -15,8 +12,6 @@ const CustomPagination = (props) => {
         pageSize,
         onChange,
         boundaryCount,
-        size,
-        shape,
         numItems,
         searchVal,
         fullWidth = false
@@ -64,53 +59,104 @@ const CustomPagination = (props) => {
     }
 
     return (
-        <React.Fragment>
-            <Box
+        <Box
+            sx={{
+                display: 'flex',
+                flexWrap: 'nowrap',
+                m: 0,
+                width: fullWidth ? "100%" : "auto",
+                justifyContent: fullWidth ? "space-between" : "flex-start",
+                alignItems: "center",
+                gap: 0.5
+            }}
+            component="form"
+            noValidate
+            autoComplete="off"
+        >
+            <Select
+                size="small"
+                value={pageSize}
+                onChange={pageSizeChanged}
+                variant="standard"
+                disableUnderline
                 sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    m: fullWidth ? 0 : 1,
-                    px: fullWidth ? 0 : 0,
-                    width: fullWidth ? "100%" : "auto",
-                    justifyContent: fullWidth ? "space-between" : "flex-start",
-                    alignItems: "center",
-                    gap: fullWidth ? 1 : 0
+                    fontSize: "0.8rem",
+                    fontWeight: 500,
+                    minWidth: 44,
+                    height: 28,
+                    "& .MuiSelect-select": {
+                        py: 0,
+                        pr: "20px !important",
+                        pl: 0.75,
+                        display: "flex",
+                        alignItems: "center"
+                    },
+                    "& .MuiSvgIcon-root": {
+                        fontSize: "1rem",
+                        right: 0
+                    }
                 }}
-                component="form"
-                noValidate
-                autoComplete="off">
-                <FormControl sx={{ minWidth: 80 }} size="small">
-                    <Select
-                        labelId="customPagination-select-helper-label"
-                        id="customPagination-select-helper"
-                        value={pageSize}
-                        // label="page size"
-                        onChange={pageSizeChanged}
-                    >
-                        {ITEMS_PER_PAGE.map((item) => {
-                            return <MenuItem key={"menu_" + item} value={item}>{item}</MenuItem>
-                        })}
-
-                    </Select>
-
-                </FormControl>
-                <Pagination page={page} count={totalPages} shape={shape ? shape : "rounded"} size={size ? size : "small"} boundaryCount={boundaryCount ? boundaryCount : 2} onChange={pageChanged} />
-                <FormControl sx={{ width: '15ch' }} variant="outlined" size="small">
-                    <OutlinedInput
-                        id="outlined-adornment-page"
-                        onChange={handleJumpToPage}
-                        onKeyUp={handleJumpToPageKeys}
-                        type="number"
-                        startAdornment={<InputAdornment position="start">page</InputAdornment>}
-                        aria-describedby="outlined-weight-helper-text"
-                        inputProps={{
-                            'aria-label': 'page',
-                        }}
-                        defaultValue={searchVal ? searchVal : ""}
-                    />
-                </FormControl>
-            </Box>
-        </React.Fragment>
+                MenuProps={{
+                    PaperProps: {
+                        sx: { "& .MuiMenuItem-root": { fontSize: "0.8rem", minHeight: 32 } }
+                    }
+                }}
+            >
+                {ITEMS_PER_PAGE.map((item) => (
+                    <MenuItem key={"menu_" + item} value={item}>{item}</MenuItem>
+                ))}
+            </Select>
+            <Pagination
+                page={page}
+                count={totalPages}
+                shape="rounded"
+                size="small"
+                boundaryCount={boundaryCount ? boundaryCount : 2}
+                onChange={pageChanged}
+                sx={{
+                    "& .MuiPaginationItem-root": {
+                        minWidth: 26,
+                        height: 26,
+                        fontSize: "0.75rem",
+                        margin: "0 1px"
+                    },
+                    "& .MuiPaginationItem-root.Mui-selected": {
+                        fontWeight: 700
+                    }
+                }}
+            />
+            <InputBase
+                onChange={handleJumpToPage}
+                onKeyUp={handleJumpToPageKeys}
+                type="number"
+                placeholder="pg#"
+                defaultValue={searchVal ? searchVal : ""}
+                inputProps={{ 'aria-label': 'jump to page' }}
+                sx={{
+                    width: 48,
+                    height: 26,
+                    fontSize: "0.75rem",
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: "6px",
+                    px: 0.75,
+                    "& input": {
+                        p: 0,
+                        textAlign: "center",
+                        "&::placeholder": {
+                            opacity: 0.5,
+                            fontSize: "0.7rem"
+                        },
+                        /* hide number spinners */
+                        "&::-webkit-outer-spin-button, &::-webkit-inner-spin-button": {
+                            WebkitAppearance: "none",
+                            margin: 0
+                        },
+                        MozAppearance: "textfield"
+                    }
+                }}
+            />
+        </Box>
     );
 };
 

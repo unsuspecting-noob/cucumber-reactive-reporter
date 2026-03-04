@@ -8,7 +8,6 @@ import stateReducer, { buildUiState } from "./uistates";
 import stepsReducer from "./steps";
 import { mergeReportState } from "./liveMerge";
 // import reducer from "./reducer.js";
-import { thunk } from "redux-thunk";
 import { loadUiStateFromSession, mergeUiState, saveUiStateToSession } from "./sessionState";
 
 export default async function () {
@@ -120,8 +119,7 @@ export default async function () {
   };
   const store = configureStore({
     reducer,
-    // middleware: [...getDefaultMiddleware(), logger(), loader], //getDefaultMiddleware comes with thunk
-    middleware: [thunk], //turning off middleware because it completely cripples frontloading data
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware({ serializableCheck: false, immutableCheck: false }),
     devTools: process.env.NODE_ENV !== 'production',
     preloadedState: storePreloadedState
   });

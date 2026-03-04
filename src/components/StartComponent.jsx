@@ -4,20 +4,15 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import FeaturesList from "./FeaturesList";
 import FeaturesPaginationBar from "./FeaturesPaginationBar";
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import LiveSidebar from "./LiveSidebar";
+import SummarySidebar from "./SummarySidebar";
 import PropTypes from 'prop-types';
 import React from "react";
 import TopBar from './TopBar';
-import { getSettings, getTheme } from "../store/uistates";
+import { featureSelected, getSettings, getTheme, scenarioSelected } from "../store/uistates";
 import useScrollTrigger from '@mui/material/useScrollTrigger';
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import useMediaQuery from '@mui/material/useMediaQuery';
 
-const LIGHT_BG = "#f3f1ec";
-const LIGHT_SURFACE = "#ece7df";
-const LIGHT_ACCENT = "#a9b7b1";
-const LIGHT_PRIMARY = "#4f7b72";
-const LIGHT_SECONDARY = "#c48f6a";
 const themeDark = createTheme({
   palette: { mode: 'dark' },
   components: {
@@ -34,27 +29,29 @@ const themeLight = createTheme({
   palette: {
     mode: 'light',
     background: {
-      default: LIGHT_BG,
-      paper: LIGHT_SURFACE
+      default: "#f8f9fa",
+      paper: "#ffffff"
     },
     primary: {
-      main: LIGHT_PRIMARY,
-      contrastText: "#ffffff"
+      main: "#1976d2"
     },
     secondary: {
-      main: LIGHT_SECONDARY,
-      contrastText: "#ffffff"
+      main: "#7c4dff"
     },
     text: {
-      primary: "#2c3a36",
-      secondary: "#5a6a64"
-    }
+      primary: "#1a1a2e",
+      secondary: "#5f6368"
+    },
+    divider: "#e0e0e0"
   },
   components: {
     MuiAppBar: {
       styleOverrides: {
         colorPrimary: {
-          backgroundColor: LIGHT_ACCENT
+          backgroundColor: "#ffffff",
+          color: "#1a1a2e",
+          borderBottom: "1px solid #e0e0e0",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.08)"
         }
       }
     }
@@ -106,25 +103,25 @@ ScrollTop.propTypes = {
 };
 
 const StartComponent = (props) => {
+  const dispatch = useDispatch();
   const themeSelector = useSelector((state) => getTheme(state));
   const settings = useSelector((state) => getSettings(state));
   const isLive = Boolean(settings?.live?.enabled);
   const isDesktop = useMediaQuery("(min-width: 1200px)");
-  const [liveDrawerOpen, setLiveDrawerOpen] = React.useState(isLive && isDesktop);
+  const [drawerOpen, setDrawerOpen] = React.useState(isLive && isDesktop);
   const drawerWidth = 320;
 
-  React.useEffect(() => {
-    if (!isLive && liveDrawerOpen) {
-      setLiveDrawerOpen(false);
-    }
-  }, [isLive, liveDrawerOpen]);
-
-  const handleToggleLiveDrawer = () => {
-    setLiveDrawerOpen((prev) => !prev);
+  const handleToggleDrawer = () => {
+    setDrawerOpen((prev) => !prev);
   };
 
-  const handleCloseLiveDrawer = () => {
-    setLiveDrawerOpen(false);
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+  };
+
+  const handleSummaryScenarioClick = (featureId, scenarioId) => {
+    dispatch(featureSelected({ id: featureId }));
+    dispatch(scenarioSelected({ id: scenarioId }));
   };
 
   const containerRef = React.useRef(null);
@@ -162,32 +159,32 @@ const StartComponent = (props) => {
         <CssBaseline>
           <AppBar position="sticky" ref={appBarRef}>
             <TopBar
-              onToggleLiveSidebar={handleToggleLiveDrawer}
-              liveSidebarOpen={liveDrawerOpen}
-              showLiveSidebarToggle={isLive}
+              onToggleSummary={handleToggleDrawer}
+              summaryOpen={drawerOpen}
               paginationNode={<FeaturesPaginationBar />}
             />
           </AppBar>
           <div id="back-to-top-anchor" />
           <FeaturesList />
-          {isLive ? (
-            <Drawer
-              anchor="right"
-              variant="temporary"
-              open={liveDrawerOpen}
-              onClose={handleCloseLiveDrawer}
-              ModalProps={{ keepMounted: true }}
-              sx={{
-                "& .MuiDrawer-paper": {
-                  width: drawerWidth,
-                  boxSizing: "border-box",
-                  padding: 2
-                }
-              }}
-            >
-              <LiveSidebar />
-            </Drawer>
-          ) : null}
+          <Drawer
+            anchor="right"
+            variant="temporary"
+            open={drawerOpen}
+            onClose={handleCloseDrawer}
+            ModalProps={{ keepMounted: true }}
+            sx={{
+              "& .MuiDrawer-paper": {
+                width: drawerWidth,
+                boxSizing: "border-box"
+              }
+            }}
+          >
+            <SummarySidebar
+              isLive={isLive}
+              onScenarioClick={handleSummaryScenarioClick}
+              onClose={handleCloseDrawer}
+            />
+          </Drawer>
           {/** Jump to top */}
           <ScrollTop {...props}>
             <Fab size="small" aria-label="scroll back to top">

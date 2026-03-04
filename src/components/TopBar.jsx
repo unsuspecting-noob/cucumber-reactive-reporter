@@ -1,7 +1,7 @@
 import '../overwriteStyles.css'
 
 import { Autocomplete, TextField } from "@mui/material";
-import { Box, Button, ButtonGroup, Chip, Container, Divider, FormControlLabel, FormGroup, Paper, Stack, Switch, Toolbar, Tooltip, Typography } from "@mui/material";
+import { Box, Chip, Container, Divider, FormControlLabel, IconButton, Paper, Stack, Switch, Toolbar, Tooltip, Typography } from "@mui/material";
 import {
     FeaturesToggleValuesEnum,
     displayMetadataButtonClicked,
@@ -36,6 +36,8 @@ import { useDispatch, useSelector } from "react-redux";
 import AlternateEmailIcon from "@mui/icons-material/AlternateEmail";
 import BackspaceIcon from "@mui/icons-material/Backspace";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import LightModeIcon from "@mui/icons-material/LightMode";
 import DayJs from "dayjs";
 import Duration from "dayjs/plugin/duration";
 import { PieChart } from 'react-minimal-pie-chart';
@@ -50,17 +52,16 @@ import { getTotalDurationNanoSec } from "../store/steps";
 import { styled } from '@mui/material/styles';
 
 const TopBar = ({
-    onToggleLiveSidebar,
-    liveSidebarOpen = false,
-    showLiveSidebarToggle = false,
+    onToggleSummary,
+    summaryOpen = false,
     paginationNode = null
 }) => {
     const dispatch = useDispatch();
     let metaCount = 0;
     let features;
-    let titleChipColor;
     const filterInputRef = React.useRef(null);
     const scrollFilterToEndRef = React.useRef(false);
+    const [hoveredPieIndex, setHoveredPieIndex] = React.useState(null);
 
     let displayFeaturesToggleState = useSelector((state) => getFeaturesToggleValue(state));
     let totalTimeMsec = useSelector((state) => getTotalDurationNanoSec(state)) / 1000000;
@@ -91,19 +92,15 @@ const TopBar = ({
     switch (displayFeaturesToggleState) {
         case FeaturesToggleValuesEnum.ALL:
             filterVal ? features = matchedFeatures_ALL : features = allFeatures
-            titleChipColor = "primary";
             break;
         case FeaturesToggleValuesEnum.FAILED:
             filterVal ? features = matchedFeatures_FAILED : features = failedFeatures
-            titleChipColor = "error";
             break;
         case FeaturesToggleValuesEnum.PASSED:
             filterVal ? features = matchedFeatures_PASSED : features = passedFeatures
-            titleChipColor = "success";
             break;
         case FeaturesToggleValuesEnum.SKIPPED:
             filterVal ? features = matchedFeatures_SKIPPED : features = skippedFeatures
-            titleChipColor = "warning";
             break;
         default:
             break;
@@ -279,35 +276,201 @@ const TopBar = ({
     if (m > 0) duration_str = duration_str + `${m === 1 ? (s === 0 ? " and " : " ") + m + " minute" : m + " minutes"}`;
     if (s > 0) duration_str = duration_str + `${s === 1 ? ((duration_str ? " and " : "") + s + " second") : ((duration_str ? " and " : "") + s + " seconds")}`;
 
-    //for the banner separating top bar and features
-    const chip = `${numCurrentFeatures} ${numCurrentFeatures === 1 ? "Feature" : "Features"} and ${numCurrentScenarios} ${numCurrentScenarios === 1 ? "Scenario" : "Scenarios"}${displayFeaturesToggleState === FeaturesToggleValuesEnum.ALL ? ", " + numCurrentFailedFeatures + " failed features" : ""}`;
     return (
-        <Toolbar disableGutters sx={{ pt: 0.2, pb: 0.2, minHeight: "unset", alignItems: "stretch" }}>
-            <Container maxWidth="100%">
-                {/* <Box mt={1}> */}
+        <Toolbar disableGutters sx={{ pt: 0, pb: 0, minHeight: "unset", alignItems: "stretch" }}>
+            <Container maxWidth="100%" sx={{ px: { xs: 1.5, md: 2 } }}>
+                <Stack direction="column" spacing={0}>
+                    {/* === ROW 1: Title/description left | Stats + pie right === */}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            py: 0.5,
+                            gap: 2,
+                            minHeight: 40
+                        }}
+                    >
+                        {/* Left: Title & description */}
+                        <Stack direction="column" spacing={0} sx={{ minWidth: 0, flex: 1 }}>
+                            {settings.title ? (
+                                <Typography
+                                    variant="subtitle1"
+                                    sx={{
+                                        fontWeight: 600,
+                                        fontSize: "0.95rem",
+                                        lineHeight: 1.3,
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis"
+                                    }}
+                                >
+                                    {settings.title}
+                                </Typography>
+                            ) : null}
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+                                {settings.description ? (
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            opacity: 0.7,
+                                            lineHeight: 1.2,
+                                            whiteSpace: "nowrap",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis"
+                                        }}
+                                    >
+                                        {settings.description}
+                                    </Typography>
+                                ) : null}
+                                {duration_str ? (
+                                    <Chip
+                                        label={duration_str}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{
+                                            height: 20,
+                                            fontSize: "0.7rem",
+                                            opacity: 0.8,
+                                            flexShrink: 0,
+                                            "& .MuiChip-label": { px: 1 }
+                                        }}
+                                    />
+                                ) : null}
+                            </Stack>
+                        </Stack>
 
-                <Stack direction="column" spacing={0.25}>
+                        {/* Right: Stats summary + pie chart */}
+                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexShrink: 0 }}>
+                            {/* Summary counts */}
+                            <Stack direction="column" spacing={0} alignItems="flex-end" sx={{ display: { xs: "none", md: "flex" } }}>
+                                <Typography variant="caption" sx={{ lineHeight: 1.3, opacity: 0.7 }}>
+                                    {numCurrentFeatures} {numCurrentFeatures === 1 ? "feature" : "features"} / {numCurrentScenarios} {numCurrentScenarios === 1 ? "scenario" : "scenarios"}
+                                    {displayFeaturesToggleState === FeaturesToggleValuesEnum.ALL && numCurrentFailedFeatures > 0
+                                        ? ` (${numCurrentFailedFeatures} failed)`
+                                        : ""}
+                                </Typography>
+                                <Stack direction="row" spacing={0.75} alignItems="center">
+                                    <StatDot color="#28a745" label={numPassedScenarios} />
+                                    {numFailedScenarios > 0 ? (
+                                        <Tooltip title="Show failure summary">
+                                            <Box
+                                                component="span"
+                                                onClick={() => { if (typeof onToggleSummary === "function") onToggleSummary(); }}
+                                                sx={{ cursor: "pointer", "&:hover": { opacity: 0.8 } }}
+                                            >
+                                                <StatDot color="#dc3545" label={numFailedScenarios} />
+                                            </Box>
+                                        </Tooltip>
+                                    ) : null}
+                                    {numSkippedScenarios > 0 ? <StatDot color="#ffc107" label={numSkippedScenarios} /> : null}
+                                </Stack>
+                            </Stack>
+                            <Tooltip
+                                placement="bottom"
+                                arrow
+                                title={
+                                    hoveredPieIndex !== null
+                                        ? (() => {
+                                            const items = [
+                                                { label: "Passed", value: numPassedScenarios, color: "#28a745" },
+                                                { label: "Skipped", value: numSkippedScenarios, color: "#ffc107" },
+                                                { label: "Failed", value: numFailedScenarios, color: "#dc3545" }
+                                            ];
+                                            const total = numPassedScenarios + numSkippedScenarios + numFailedScenarios;
+                                            const item = items[hoveredPieIndex];
+                                            const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
+                                            return `${item.label}: ${item.value} (${pct}%)`;
+                                        })()
+                                        : ""
+                                }
+                                open={hoveredPieIndex !== null}
+                                disableHoverListener
+                                disableFocusListener
+                                disableTouchListener
+                                slotProps={{
+                                    tooltip: {
+                                        sx: {
+                                            fontSize: "0.75rem",
+                                            fontWeight: 600,
+                                            py: 0.25,
+                                            px: 1
+                                        }
+                                    }
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        width: 48,
+                                        height: 48,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        flexShrink: 0,
+                                        position: "relative",
+                                        cursor: "default"
+                                    }}
+                                    onMouseLeave={() => setHoveredPieIndex(null)}
+                                >
+                                    <PieChart
+                                        data={[
+                                            { title: "Passed", value: numPassedScenarios, color: '#28a745' },
+                                            { title: "Skipped", value: numSkippedScenarios, color: '#ffc107' },
+                                            { title: "Failed", value: numFailedScenarios, color: '#dc3545' },
+                                        ]}
+                                        style={{ height: 48, width: 48 }}
+                                        lineWidth={28}
+                                        startAngle={-90}
+                                        animate
+                                        segmentsShift={(index) => (index === hoveredPieIndex ? 2 : 0)}
+                                        onMouseOver={(_, index) => setHoveredPieIndex(index)}
+                                        onMouseOut={() => setHoveredPieIndex(null)}
+                                    />
+                                    <Box
+                                        sx={{
+                                            position: "absolute",
+                                            inset: 0,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            pointerEvents: "none"
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{
+                                                fontSize: "0.55rem",
+                                                fontWeight: 700,
+                                                lineHeight: 1,
+                                                color: "text.primary",
+                                                opacity: hoveredPieIndex !== null ? 1 : 0.5,
+                                                transition: "opacity 0.15s ease"
+                                            }}
+                                        >
+                                            {hoveredPieIndex !== null
+                                                ? [numPassedScenarios, numSkippedScenarios, numFailedScenarios][hoveredPieIndex]
+                                                : (numPassedScenarios + numSkippedScenarios + numFailedScenarios)
+                                            }
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </Tooltip>
+                        </Stack>
+                    </Box>
+
+                    {/* === ROW 2: Filter bar + controls | pagination (centered) | right controls === */}
                     <Box
                         sx={{
                             display: "grid",
-                            gridTemplateColumns: { xs: "1fr", lg: "minmax(0,1fr) auto minmax(0,1fr)" },
-                            columnGap: 0.75,
-                            rowGap: 0.4,
-                            alignItems: "start"
+                            gridTemplateColumns: "1fr auto 1fr",
+                            alignItems: "center",
+                            gap: 0.75,
+                            pb: 0.5
                         }}
                     >
-                        <Stack
-                            direction="row"
-                            spacing={1}
-                            alignItems="flex-start"
-                            justifyContent="flex-start"
-                            sx={{
-                                minWidth: 0,
-                                mt: 0.6
-                            }}
-                        >
-                            <Box sx={{ flex: "1 1 360px", minWidth: 180, maxWidth: 500 }}>
-                                <Item elevation={3}>
+                        {/* Left: Filter input + icon buttons */}
+                        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
+                            <Box sx={{ flex: "1 1 200px", minWidth: 140, maxWidth: 480 }}>
+                                <Item elevation={2}>
                                     <Autocomplete
                                         freeSolo
                                         clearOnEscape
@@ -325,14 +488,16 @@ const TopBar = ({
                                             inputRef={filterInputRef}
                                             sx={{
                                                 "& .MuiInputBase-root": {
-                                                    backgroundColor: themeName === "light" ? "#e0dad0" : "background.paper"
+                                                    backgroundColor: "background.paper",
+                                                    height: 34
                                                 },
                                                 "& .MuiInputBase-input": {
-                                                    paddingTop: "9px",
-                                                    paddingBottom: "9px"
+                                                    paddingTop: "6px",
+                                                    paddingBottom: "6px",
+                                                    fontSize: "0.85rem"
                                                 },
                                                 "& .MuiFormLabel-root": {
-                                                    fontSize: "0.82rem"
+                                                    fontSize: "0.78rem"
                                                 }
                                             }}
                                             label="filter by tags, ex.: @tag1 and not (@tag2 or @tag3)"
@@ -347,179 +512,140 @@ const TopBar = ({
                                         />} />
                                 </Item>
                             </Box>
-                            <ButtonGroup
-                                orientation="vertical"
-                                sx={{
-                                    "& .MuiButton-root": {
-                                        py: 0.35,
-                                        minHeight: "30px"
-                                    }
-                                }}
-                            >
-                                <Button variant="outlined" color="secondary" onClick={onTagHelpClick} size="small" startIcon={<AlternateEmailIcon />}>tags</Button>
-                                <Button variant="outlined" color="secondary" onClick={onMetadataClick} size="small" startIcon={<BookmarkBorderIcon />}>metadata</Button>
-                                {showLiveSidebarToggle ? (
-                                    <Button
-                                        variant={liveSidebarOpen ? "contained" : "outlined"}
-                                        color="secondary"
-                                        onClick={onToggleLiveSidebar}
+                            <Stack direction="row" spacing={0.25} sx={{ flexShrink: 0 }}>
+                                <Tooltip title="Tags helper">
+                                    <IconButton
                                         size="small"
-                                        startIcon={<ViewSidebarIcon />}
+                                        onClick={onTagHelpClick}
+                                        color={displayTagHelpState ? "primary" : "inherit"}
+                                        sx={{ opacity: displayTagHelpState ? 1 : 0.7 }}
                                     >
-                                        live
-                                    </Button>
-                                ) : null}
-                            </ButtonGroup>
+                                        <AlternateEmailIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Metadata">
+                                    <IconButton
+                                        size="small"
+                                        onClick={onMetadataClick}
+                                        color={displayMetadataState ? "primary" : "inherit"}
+                                        sx={{ opacity: displayMetadataState ? 1 : 0.7 }}
+                                    >
+                                        <BookmarkBorderIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Summary">
+                                    <IconButton
+                                        size="small"
+                                        onClick={onToggleSummary}
+                                        color={summaryOpen ? "primary" : "inherit"}
+                                        sx={{ opacity: summaryOpen ? 1 : 0.7 }}
+                                    >
+                                        <ViewSidebarIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                            </Stack>
                         </Stack>
 
-                        <Stack
-                            direction="column"
-                            spacing={0}
-                            alignItems="center"
-                            justifyContent="center"
-                            sx={{
-                                textAlign: "center",
-                                mt: 0.1,
-                                minWidth: { xs: 0, lg: 240 },
-                                justifySelf: { xs: "start", lg: "center" }
-                            }}
-                        >
-                            {settings.title ? (
-                                <Chip label={`${settings.title}, ${duration_str}`} variant="outlined" size="small" color={titleChipColor} />
-                            ) : null}
-                            {settings.description ? (
-                                <Box
-                                    sx={{
-                                        mt: 0.12,
-                                        lineHeight: 1.1,
-                                        display: "flex",
-                                        justifyContent: "center",
-                                        alignItems: "center"
-                                    }}
-                                >
-                                    {settings.description}
-                                </Box>
-                            ) : null}
-                        </Stack>
+                        {/* Center: Pagination */}
+                        <Box sx={{ display: "flex", justifyContent: "center" }}>
+                            {paginationNode ?? null}
+                        </Box>
 
-                        <Stack
-                            direction="row"
-                            spacing={0.75}
-                            alignItems="center"
-                            justifyContent="flex-end"
-                            sx={{
-                                minWidth: 0,
-                                justifySelf: "end",
-                                flexWrap: "wrap",
-                                mt: 0.4
-                            }}
-                        >
+                        {/* Right: Show All, theme, hooks */}
+                        <Stack direction="row" spacing={0.75} alignItems="center" justifyContent="flex-end" sx={{ flexShrink: 0 }}>
                             <Box sx={{ flexShrink: 0 }}>
                                 <TestSelectorButton />
                             </Box>
-                            <FormGroup
-                                sx={{
-                                    "& .MuiFormControlLabel-root": {
-                                        margin: 0,
-                                        minHeight: "22px"
-                                    },
-                                    "& .MuiFormControlLabel-label": {
-                                        fontSize: "0.95rem",
-                                        lineHeight: 1
-                                    }
-                                }}
-                            >
-                                <FormControlLabel control={<Switch size="small" checked={themeName === "dark"} onChange={handleThemeChange} />} label="theme" />
-                                <FormControlLabel control={<Tooltip title="Show or hide Before/After steps"><Switch size="small" checked={showExtraSteps === true} onChange={handleBoilerChange} /></Tooltip>} label="extra steps" />
-                            </FormGroup>
-                            <Box sx={{ width: "3.6rem", height: "3.6rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                <PieChart
-                                    data={[
-                                        { title: "Passed", value: numPassedScenarios, color: '#28a745' },
-                                        { title: "Skipped", value: numSkippedScenarios, color: '#ffc107' },
-                                        { title: "Failed", value: numFailedScenarios, color: '#dc3545' },
-                                    ]}
-                                    style={{ height: '3.6rem', width: '3.6rem' }}
+                            <Divider orientation="vertical" flexItem sx={{ opacity: 0.3 }} />
+                            <Tooltip title={`Switch to ${themeName === "dark" ? "light" : "dark"} theme`}>
+                                <IconButton size="small" onClick={handleThemeChange} sx={{ opacity: 0.7 }}>
+                                    {themeName === "dark" ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Show or hide Before/After steps">
+                                <FormControlLabel
+                                    control={<Switch size="small" checked={showExtraSteps === true} onChange={handleBoilerChange} />}
+                                    label={<Typography variant="caption" sx={{ fontSize: "0.75rem", opacity: 0.8 }}>hooks</Typography>}
+                                    sx={{ ml: 0, mr: 0 }}
                                 />
-                            </Box>
+                            </Tooltip>
                         </Stack>
                     </Box>
 
-                    <Divider variant="middle" sx={{ mt: 0.05, mb: 0.1 }}>
-                        <Chip label={chip} variant="filled" style={{ fontSize: "1em" }} />
-                    </Divider>
-
+                    {/* === EXPANDABLE: Metadata panel === */}
                     {displayMetadataState ? (
-                        <Stack direction="column">
-                            <Divider variant="fullWidth" sx={{
-                                minWidth: "55vw",
-                                maxWidth: "95vw"
-                            }}>Metadata</Divider>
-
-                            <Stack direction="column"
-                                spacing={0}
-                                alignItems="flex-start"
-                                justifyContent="center"
-                                divider={<Divider orientation="horizontal" variant="fullWidth" flexItem />}
-                                sx={{ display: 'flex', flexWrap: 'wrap' }}
+                        <Box
+                            sx={{
+                                py: 1,
+                                px: 2,
+                                mb: 0.5,
+                                borderRadius: 1,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                backgroundColor: "background.paper"
+                            }}
+                        >
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mb: 0.5, display: "block" }}>
+                                Metadata
+                            </Typography>
+                            <Stack
+                                direction="row"
+                                spacing={2}
+                                sx={{ flexWrap: "wrap", gap: 0.5 }}
                             >
                                 {settings.metadata ? Object.keys(settings.metadata).sort().map((k) => (
-                                    <div key={metaCount++}>
-                                        {k}: {settings.metadata[k]}
-                                    </div>
-                                )) : <React.Fragment />}
-                            </Stack>
-
-                        </Stack>
-                    ) : <React.Fragment />
-                    }
-                    {displayTagHelpState ? (
-                        <Stack direction="column">
-                            <Divider variant="fullWidth" sx={{
-                                minWidth: "55vw",
-                                maxWidth: "95vw"
-                            }}>tags</Divider>
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    flexDirection: "row",
-                                    alignItems: "stretch",
-                                    gap: 2,
-                                    mt: 1,
-                                    px: 2,
-                                    py: 1.5,
-                                    borderRadius: 2,
-                                    border: "1px solid",
-                                    borderColor: "divider",
-                                    backgroundColor: "background.paper",
-                                    minWidth: "55vw",
-                                    maxWidth: "95vw",
-                                    width: "95vw",
-                                    margin: "0 auto"
-                                }}
-                            >
-                                <Stack
-                                    direction="column"
-                                    spacing={1}
-                                    alignItems="center"
-                                    justifyContent="center"
-                                    sx={{ minWidth: 120 }}
-                                >
                                     <Chip
-                                        icon={<BackspaceIcon />}
-                                        label="Del"
+                                        key={metaCount++}
+                                        label={`${k}: ${settings.metadata[k]}`}
                                         size="small"
-                                        color="secondary"
                                         variant="outlined"
-                                        onClick={onDeleteLastTokenClick}
-                                        sx={{
-                                            visibility: filterVal ? "visible" : "hidden",
-                                            pointerEvents: filterVal ? "auto" : "none"
-                                        }}
+                                        sx={{ fontSize: "0.75rem" }}
                                     />
-                                    <Typography variant="caption" color="text.secondary">
-                                        Operators
-                                    </Typography>
+                                )) : null}
+                            </Stack>
+                        </Box>
+                    ) : null}
+
+                    {/* === EXPANDABLE: Tags help panel === */}
+                    {displayTagHelpState ? (
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "row",
+                                alignItems: "stretch",
+                                gap: 2,
+                                px: 2,
+                                py: 1,
+                                mb: 0.5,
+                                borderRadius: 1,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                backgroundColor: "background.paper"
+                            }}
+                        >
+                            <Stack
+                                direction="column"
+                                spacing={0.5}
+                                alignItems="center"
+                                justifyContent="center"
+                                sx={{ minWidth: 90 }}
+                            >
+                                <Chip
+                                    icon={<BackspaceIcon />}
+                                    label="Del"
+                                    size="small"
+                                    color="secondary"
+                                    variant="outlined"
+                                    onClick={onDeleteLastTokenClick}
+                                    sx={{
+                                        visibility: filterVal ? "visible" : "hidden",
+                                        pointerEvents: filterVal ? "auto" : "none"
+                                    }}
+                                />
+                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
+                                    Operators
+                                </Typography>
+                                <Stack direction="row" spacing={0.5} sx={{ flexWrap: "wrap", justifyContent: "center" }}>
                                     {operatorTokens.map((t) => (
                                         <Chip
                                             key={`op-token-${t}`}
@@ -528,43 +654,54 @@ const TopBar = ({
                                             color="secondary"
                                             variant="filled"
                                             onClick={() => onTagTokenClick(t)}
+                                            sx={{ fontSize: "0.75rem" }}
                                         />
                                     ))}
                                 </Stack>
-                                <Divider orientation="vertical" flexItem />
-                                <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    justifyContent="center"
-                                    sx={{ display: "flex", flexWrap: "wrap", gap: 1, flex: 1 }}
-                                >
-                                    {helpTagTokens.map((t) => (
-                                        <Chip
-                                            key={`tag-token-${t}`}
-                                            label={t}
-                                            size="small"
-                                            color="default"
-                                            variant="outlined"
-                                            onClick={() => onTagTokenClick(t)}
-                                        />
-                                    ))}
-                                </Stack>
-                            </Box>
-                        </Stack>
-                    ) : <React.Fragment />
-                    }
-                </Stack>
-                {paginationNode ? (
-                    <React.Fragment>
-                        <Box sx={{ pt: 0.2 }}>
-                            {paginationNode}
+                            </Stack>
+                            <Divider orientation="vertical" flexItem />
+                            <Stack
+                                direction="row"
+                                alignItems="center"
+                                justifyContent="flex-start"
+                                sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, flex: 1 }}
+                            >
+                                {helpTagTokens.map((t) => (
+                                    <Chip
+                                        key={`tag-token-${t}`}
+                                        label={t}
+                                        size="small"
+                                        color="default"
+                                        variant="outlined"
+                                        onClick={() => onTagTokenClick(t)}
+                                        sx={{ fontSize: "0.75rem" }}
+                                    />
+                                ))}
+                            </Stack>
                         </Box>
-                        <Box sx={{ height: 8, backgroundColor: "transparent" }} />
-                    </React.Fragment>
-                ) : null}
+                    ) : null}
+                </Stack>
             </Container >
         </Toolbar >
     );
 };
+
+/** Small colored dot + number for the stats legend */
+const StatDot = ({ color, label }) => (
+    <Stack direction="row" spacing={0.4} alignItems="center">
+        <Box
+            sx={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                backgroundColor: color,
+                flexShrink: 0
+            }}
+        />
+        <Typography variant="caption" sx={{ fontSize: "0.78rem", fontWeight: 600, lineHeight: 1 }}>
+            {label}
+        </Typography>
+    </Stack>
+);
 
 export default TopBar;

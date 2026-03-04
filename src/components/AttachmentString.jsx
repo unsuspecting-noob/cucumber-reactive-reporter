@@ -17,9 +17,27 @@ const AttachmentString = (props) => {
                     <TableRow hover>
                         <TableCell
                             align="center"
-                            style={{ border: "groove", borderColor: frameColor, width: "100%", position: "relative" }}
+                            style={{ border: "groove", borderColor: frameColor, width: "100%" }}
+                            sx={{
+                                position: "relative",
+                                "&:hover .copy-fab-wrapper": {
+                                    opacity: 1,
+                                    pointerEvents: "auto"
+                                }
+                            }}
                         >
-                            <Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}>
+                            <Box
+                                className="copy-fab-wrapper"
+                                sx={{
+                                    position: "absolute",
+                                    top: 8,
+                                    right: 8,
+                                    zIndex: 1,
+                                    opacity: 0,
+                                    transition: "opacity 0.2s ease",
+                                    pointerEvents: "none"
+                                }}
+                            >
                                 <CopyToClipboard text={content}>
                                     <Fab color="primary" aria-label="copy to clipboard" size="small">
                                         <ContentCopy />

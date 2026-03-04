@@ -14,7 +14,18 @@ const copyFabWrapperSx = {
     position: "absolute",
     top: 8,
     right: 8,
-    zIndex: 1
+    zIndex: 1,
+    opacity: 0,
+    transition: "opacity 0.2s ease",
+    pointerEvents: "none"
+};
+
+const hoverCellSx = {
+    position: "relative",
+    "&:hover .copy-fab-wrapper": {
+        opacity: 1,
+        pointerEvents: "auto"
+    }
 };
 
 const buildEmbeddingSignature = (items) => {
@@ -49,8 +60,8 @@ const Embedding = (props) => {
                 value = value.replace('\\n', '\n'); //really for html only
                 return (
                     <TableRow key={key} hover>
-                        <TableCell align="center" style={{ ...commonCellStyle, position: "relative" }}>
-                            <Box sx={copyFabWrapperSx}>
+                        <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
+                            <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
                                 <CopyToClipboard text={value}>
                                     <Fab color="primary" aria-label="copy to clipboard" size="small">
                                         <ContentCopy />
@@ -65,8 +76,8 @@ const Embedding = (props) => {
             case "application/xml":
                 return (
                     <TableRow key={key} hover>
-                        <TableCell align="center" style={{ ...commonCellStyle, position: "relative" }}>
-                            <Box sx={copyFabWrapperSx}>
+                        <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
+                            <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
                                 <CopyToClipboard text={value}>
                                     <Fab color="primary" aria-label="copy to clipboard" size="small">
                                         <ContentCopy />
@@ -94,8 +105,8 @@ const Embedding = (props) => {
                 }
                 return (
                     <TableRow key={key} hover>
-                        <TableCell align="center" style={{ ...commonCellStyle, position: "relative" }}>
-                            <Box sx={copyFabWrapperSx}>
+                        <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
+                            <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
                                 <CopyToClipboard text={value}>
                                     <Fab color="primary" aria-label="copy to clipboard" size="small">
                                         <ContentCopy />
@@ -129,8 +140,8 @@ const Embedding = (props) => {
             default:
                 return (
                     <TableRow key={key} hover>
-                        <TableCell align="center" style={{ ...commonCellStyle, position: "relative" }}>
-                            <Box sx={copyFabWrapperSx}>
+                        <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
+                            <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
                                 <CopyToClipboard text={value}>
                                     <Fab color="primary" aria-label="copy to clipboard" size="small">
                                         <ContentCopy />
