@@ -69,9 +69,12 @@ const ScenarioContainer = (props) => {
     textAlign: 'center',
     color: theme.palette.text.secondary,
     minWidth: "100%",
-    border: "2px solid",
+    border: "1px solid",
     borderColor: theme.palette.divider,
-    backgroundColor: themeName === "dark" ? null : (compact ? "#e6e2da" : "#d4d4d4")
+    borderRadius: 6,
+    overflow: "hidden",
+    transition: "box-shadow 0.15s ease, border-color 0.15s ease",
+    backgroundColor: themeName === "dark" ? null : (compact ? "#f8f9fa" : "#f3f4f6")
   }));
 
   let taglinks = [];
@@ -101,20 +104,34 @@ const ScenarioContainer = (props) => {
   const scenarioIsPending = !hasAnyStatus;
   const scenarioIsRunning = hasAnyStatus && hasMissingStatus;
 
+  const selectedAccent = selectionMode && isSelected && !scenarioIsRunning;
+
   return (
     <React.Fragment>
       <Item
-        elevation={3}
+        elevation={selectedAccent ? 2 : 1}
         className={scenarioIsPending ? "live-pending" : ""}
         sx={{
+          position: "relative",
           width: compact ? "100%" : "95%",
-          minHeight: compact ? "56px" : "8vh",
+          minHeight: compact ? "44px" : "8vh",
           ...(isLive ? null : { contentVisibility: "auto", containIntrinsicSize: "900px 180px" }),
-          ...(scenarioIsRunning ? { borderColor: orange[500], boxShadow: `0 0 0 2px ${orange[200]}` } : null),
-          ...(selectionMode && isSelected && !scenarioIsRunning ? {
+          ...(scenarioIsRunning ? { borderColor: orange[400], boxShadow: `0 0 0 1px ${orange[200]}` } : null),
+          ...(selectedAccent ? {
             borderColor: theme.palette.primary.main,
-            boxShadow: `0 0 0 2px ${theme.palette.primary.light}`
-          } : null)
+            bgcolor: themeName === "dark" ? "rgba(144,202,249,0.08)" : "rgba(25,118,210,0.05)"
+          } : null),
+          "&::before": (selectedAccent || scenarioIsRunning) ? {
+            content: '""',
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 3,
+            borderRadius: "6px 0 0 6px",
+            backgroundColor: scenarioIsRunning ? orange[500] : theme.palette.primary.main,
+            zIndex: 1
+          } : {}
         }}
       >
         <CardActionArea
@@ -128,6 +145,7 @@ const ScenarioContainer = (props) => {
             disableTypography={false}
             sx={{
               py: compact ? 0.5 : 1,
+              px: compact ? 1.5 : 2,
               alignItems: "center",
               width: "100%",
               flex: "1 1 auto",
@@ -143,33 +161,36 @@ const ScenarioContainer = (props) => {
             }}
             action={
               <Box sx={{ display: "flex", alignItems: "center", height: "100%", justifyContent: "flex-end", pr: compact ? 0.5 : 1 }}>
-                <Stack direction="row-reverse" spacing={0.5} xs={1.6} justifyContent="middle" alignItems="center">
-                  {failedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: red[700] }}>{failedSteps.length}</Box>) : null}
-                  {skippedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: yellow[700] }}>{skippedSteps.length}</Box>) : null}
-                  {passedStepsNoExtra.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: green[700] }}>{showExtra ? passedSteps.length : passedStepsNoExtra.length}</Box>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  {passedStepsNoExtra.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: green[700], borderRadius: "11px", fontSize: "0.75rem", fontWeight: 600 }}>{showExtra ? passedSteps.length : passedStepsNoExtra.length}</Box>
                   ) : null}
+                  {skippedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: yellow[700], borderRadius: "11px", fontSize: "0.75rem", fontWeight: 600 }}>{skippedSteps.length}</Box>) : null}
+                  {failedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: red[700], borderRadius: "11px", fontSize: "0.75rem", fontWeight: 600 }}>{failedSteps.length}</Box>) : null}
                 </Stack>
               </Box>
             }
             title={
               <Stack direction="column">
-                <Typography
-                  variant="capture"
-                  align="left"
-                  style={{
-                    minHeight: "1vh",
-                    fontStyle: "italic",
-                    fontSize: compact ? "0.65rem" : "1.3vmin",
-                    fontWeight: "bold",
-                    color: purple[400]
-                  }}
-                >
-                  <Stack direction="row" spacing="10px">
-                    {taglinks.map((tag) => (
-                      tag.link ? <a href={tag.link} key={tagkey++}>{tag.name}</a> : <div key={tagkey++}>{tag.name}</div>)
-                    )}
-                  </Stack>
-                </Typography>
+                {taglinks.length > 0 && (
+                  <Typography
+                    component="div"
+                    align="left"
+                    sx={{
+                      fontStyle: "italic",
+                      fontSize: compact ? "0.65rem" : "0.7rem",
+                      fontWeight: 600,
+                      color: purple[400]
+                    }}
+                  >
+                    <Stack direction="row" spacing={0.75} flexWrap="wrap">
+                      {taglinks.map((tag) => (
+                        tag.link
+                          ? <a href={tag.link} key={tagkey++} style={{ color: "inherit" }}>{tag.name}</a>
+                          : <span key={tagkey++}>{tag.name}</span>
+                      ))}
+                    </Stack>
+                  </Typography>
+                )}
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <span>{name}</span>
                   {scenarioIsRunning ? <span className="live-running-indicator">...</span> : null}
@@ -178,8 +199,8 @@ const ScenarioContainer = (props) => {
             }
             titleTypographyProps={{
               color: nameColor,
-              marginLeft: "1vw",
-              fontSize: compact ? "0.95rem" : "1.7vmin",
+              fontSize: compact ? "0.9rem" : "1rem",
+              fontWeight: 500,
               textAlign: "left"
             }}
           />
@@ -195,7 +216,7 @@ const ScenarioContainer = (props) => {
           </Collapse>
         )}
       </Item>
-    </React.Fragment >
+    </React.Fragment>
   );
 };
 

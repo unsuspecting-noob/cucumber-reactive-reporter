@@ -270,11 +270,10 @@ const FeaturesList = () => {
                     position: "sticky",
                     top: "var(--reporter-header-height, 96px)",
                     alignSelf: "start",
-                    maxHeight: "calc(100vh - var(--reporter-header-height, 96px) - 16px)",
+                    height: "calc(100vh - var(--reporter-header-height, 96px))",
                     overflow: "hidden",
                     display: "flex",
-                    flexDirection: "column",
-                    minHeight: 0
+                    flexDirection: "column"
                   }}
                 >
                   <Box
@@ -297,6 +296,7 @@ const FeaturesList = () => {
                     sx={{
                       flex: 1,
                       minHeight: 0,
+                      height: "100%",
                       overflow: "auto",
                       overscrollBehavior: "contain",
                       pl: 1

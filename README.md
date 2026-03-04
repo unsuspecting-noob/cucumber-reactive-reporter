@@ -95,3 +95,4 @@ options.linkTags = linkTags;
 | 1.0.8 | Fixed json parsing error for newer cucumber version, where Before and After steps do not provide code line info|
 | 1.0.9 | Fixed displayed step duration in newer versions of cucumber|
 | 1.0.10 | New reporter option to convert some tags to custom links|
+| 1.9.0 | UI redesign: refreshed light theme, redesigned feature/scenario cards, centered pagination with page size selector, interactive pie chart with hover tooltips, fullscreen step detail dialog, deep link button for scenarios, failure summary sidebar with scenario navigation, summary drawer always available (not just live mode), React 18 upgrade |
