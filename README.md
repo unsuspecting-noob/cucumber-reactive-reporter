@@ -96,3 +96,4 @@ options.linkTags = linkTags;
 | 1.0.9 | Fixed displayed step duration in newer versions of cucumber|
 | 1.0.10 | New reporter option to convert some tags to custom links|
 | 1.9.0 | UI redesign: refreshed light theme, redesigned feature/scenario cards, centered pagination with page size selector, interactive pie chart with hover tooltips, fullscreen step detail dialog, deep link button for scenarios, failure summary sidebar with scenario navigation, summary drawer always available (not just live mode), React 18 upgrade |
+| 1.9.1 | Improved feature description formatting: multi-line rendering with left border accent, automatic bullet detection, clickable URLs, and collapsible truncation for long descriptions. Fixed deep link copy button not working in non-HTTPS contexts. Added `npm run updatedocs` script to rebuild the sample report. |

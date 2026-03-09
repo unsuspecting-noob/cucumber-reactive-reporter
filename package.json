@@ -1,6 +1,6 @@
 {
   "name": "cucumber-reactive-reporter",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "A filterable html report generator for cucumberjs written in react",
   "private": false,
   "homepage": "https://github.com/unsuspecting-noob/cucumber-reactive-reporter",
@@ -31,6 +31,7 @@
     "postgeneratedist": "node install.mjs",
     "pretestinstall": "rm -rf test",
     "testinstall": "node devtest.mjs && touch test/.nojekyll",
+    "updatedocs": "node updateSampleReport.mjs",
     "test": "react-scripts test",
     "test:node": "node --test",
     "eject": "react-scripts eject"
