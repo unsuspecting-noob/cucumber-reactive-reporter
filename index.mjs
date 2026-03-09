@@ -106,9 +106,11 @@ const generate = async (source, dest, options) => {
         cucumberVersion,
         live
     } = options;
+    const pkg = require("./package.json");
     const liveOptions = normalizeLiveOptions(live);
     const settings = {
         ...options,
+        reporterVersion: pkg.version,
         live: liveOptions
     };
     if (liveOptions.enabled && inputFormat === "message") {
