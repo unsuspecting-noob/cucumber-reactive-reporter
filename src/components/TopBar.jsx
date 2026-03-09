@@ -294,19 +294,35 @@ const TopBar = ({
                         {/* Left: Title & description */}
                         <Stack direction="column" spacing={0} sx={{ minWidth: 0, flex: 1 }}>
                             {settings.title ? (
-                                <Typography
-                                    variant="subtitle1"
-                                    sx={{
-                                        fontWeight: 600,
-                                        fontSize: "0.95rem",
-                                        lineHeight: 1.3,
-                                        whiteSpace: "nowrap",
-                                        overflow: "hidden",
-                                        textOverflow: "ellipsis"
-                                    }}
-                                >
-                                    {settings.title}
-                                </Typography>
+                                <Stack direction="row" alignItems="baseline" spacing={0.75} sx={{ minWidth: 0 }}>
+                                    <Typography
+                                        variant="subtitle1"
+                                        sx={{
+                                            fontWeight: 600,
+                                            fontSize: "0.95rem",
+                                            lineHeight: 1.3,
+                                            whiteSpace: "nowrap",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis"
+                                        }}
+                                    >
+                                        {settings.title}
+                                    </Typography>
+                                    {settings.reporterVersion ? (
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                fontSize: "0.6rem",
+                                                opacity: 0.4,
+                                                whiteSpace: "nowrap",
+                                                flexShrink: 0,
+                                                userSelect: "none"
+                                            }}
+                                        >
+                                            v{settings.reporterVersion}
+                                        </Typography>
+                                    ) : null}
+                                </Stack>
                             ) : null}
                             <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
                                 {settings.description ? (

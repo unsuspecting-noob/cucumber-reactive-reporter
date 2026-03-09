@@ -11,6 +11,7 @@ import { getAllScenariosForFeature } from "../store/scenarios";
 
 import LinkIcon from "@mui/icons-material/Link";
 import React from "react";
+import FeatureDescription from "./FeatureDescription";
 import ScenariosList from "./ScenariosList";
 import { styled } from '@mui/material/styles';
 import { useDispatch, useSelector } from "react-redux";
@@ -153,7 +154,7 @@ const FeatureContainer = (props) => {
   const activeAccent = featureIsActive;
   const [linkCopied, setLinkCopied] = React.useState(false);
 
-  const handleCopyDeepLink = (e) => {
+  const handleCopyDeepLink = async (e) => {
     e.stopPropagation();
     try {
       const url = new URL(window.location.href);
@@ -163,7 +164,24 @@ const FeatureContainer = (props) => {
       } else {
         url.searchParams.delete("scenario");
       }
-      navigator.clipboard.writeText(url.toString());
+      const text = url.toString();
+      let copied = false;
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          copied = true;
+        } catch (_) { /* permission denied, fall through */ }
+      }
+      if (!copied) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 1500);
     } catch (err) {
@@ -312,15 +330,8 @@ const FeatureContainer = (props) => {
             </Stack>
           }
         />
-        {effectiveExpanded ? <CardContent sx={{ pt: 0, pb: 0.5, px: 2 }}>
-          <Typography
-            variant="body2"
-            align="left"
-            color="text.secondary"
-            sx={{ whiteSpace: "normal", overflowWrap: "anywhere" }}
-          >
-            {description}
-          </Typography>
+        {effectiveExpanded && description ? <CardContent sx={{ pt: 0, pb: 0.5, px: 2 }}>
+          <FeatureDescription description={description} themeName={themeName} />
         </CardContent> : null}
 
       </CardActionArea>

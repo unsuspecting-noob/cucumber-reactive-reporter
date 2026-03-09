@@ -1,6 +1,6 @@
 {
   "name": "cucumber-reactive-reporter",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "A filterable html report generator for cucumberjs written in react",
   "private": false,
   "homepage": "https://github.com/unsuspecting-noob/cucumber-reactive-reporter",
@@ -22,7 +22,7 @@
   "license": "MIT",
   "scripts": {
     "start": "PUBLIC_URL=./ react-scripts start",
-    "build": "rollup -c",
+    "build": "rollup -c rollup.config.mjs",
     "prebuildreact": "rm -rf build && rm -rf react",
     "buildreact": "PUBLIC_URL=. react-scripts build && npm run build",
     "postbuildreact": "cp -R ./build ./react",
@@ -31,20 +31,22 @@
     "postgeneratedist": "node install.mjs",
     "pretestinstall": "rm -rf test",
     "testinstall": "node devtest.mjs && touch test/.nojekyll",
+    "updatedocs": "node updateSampleReport.mjs",
     "test": "react-scripts test",
     "test:node": "node --test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "prepublishOnly": "npm run generatedist"
   },
   "dependencies": {
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.8.4",
     "@babel/preset-env": "^7.8.4",
+    "@rollup/plugin-babel": "^6.1.0",
+    "@rollup/plugin-commonjs": "^29.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "ncp": "^2.0.0",
-    "rollup": "^1.0.0",
-    "rollup-plugin-babel": "^4.2.0",
-    "rollup-plugin-commonjs": "^9.2.0",
-    "rollup-plugin-copy": "^3.4.0",
-    "rollup-plugin-node-resolve": "^4.0.0"
+    "rollup": "^4.59.0",
+    "rollup-plugin-copy": "^3.4.0"
   },
   "devDependencies": {
     "@cucumber/tag-expressions": "^4.1.0",
