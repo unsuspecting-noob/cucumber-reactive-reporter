@@ -1,9 +1,11 @@
 import { Paper, Table, TableBody, TableContainer } from "@mui/material";
 import {
+  getHookArtifactStepsByScenarioId,
   getStepsByScenarioId,
   getStepsNoBoilerByScenarioId
 } from "../store/steps";
 
+import HookArtifactsPanel from "./HookArtifactsPanel";
 import React from "react";
 import StepContainer from "./StepContainer";
 import { getBoiler, stepContainerOpenSet } from "../store/uistates";
@@ -83,6 +85,10 @@ const StepsList = (props) => {
       : getStepsNoBoilerByScenarioId(state, { id }),
     stepsEqual
   );
+  const hookArtifactSteps = useSelector(
+    (state) => showExtra ? [] : getHookArtifactStepsByScenarioId(state, { id }),
+    stepsEqual
+  );
   const openMap = useSelector((state) => state.states.stepContainers[id] ?? {});
 
   const getInitialOpen = (step) => {
@@ -135,6 +141,13 @@ const StepsList = (props) => {
           </TableBody>
         </Table>
       </TableContainer>
+      {!showExtra && hookArtifactSteps.length ? (
+        <HookArtifactsPanel
+          steps={hookArtifactSteps}
+          themeName={themeName}
+          scenarioId={id}
+        />
+      ) : null}
     </React.Fragment>
   );
 };

@@ -26,7 +26,8 @@ $ npm install cucumber-reactive-reporter
 
 ## Development Baseline
 
-- Node.js: `>=24`
+- Node.js: `>=22`
+- Recommended local baseline: Node.js `22` LTS
 
 ## Example usage:
 
@@ -37,7 +38,8 @@ let options = {
     "description": "... test suite description",
     "inputFormat": "legacy-json",
     "attachmentsEncoding": "auto",
-    "cucumberVersion": "12.5.0"
+    "cucumberVersion": "12.5.0",
+    "suppressMetadataAttachments": true
 };
 let metadata = {
     "some key": "value",
@@ -64,6 +66,9 @@ options.linkTags = linkTags;
   - Use `base64` if text attachments are base64 encoded.
   - `auto` decodes base64-looking text attachments.
 - `cucumberVersion`: optional version hint to pick attachment decoding behavior.
+- `suppressMetadataAttachments`: `true` by default.
+  - Hides runner-generated metadata blobs such as `application/vnd.allure.message+json`.
+  - Set to `false` if you explicitly want to inspect those attachments in the report.
 - `live`: enable incremental updates for message streams; requires `inputFormat: "message"`.
   - Example: `live: { enabled: true, pollIntervalMs: 2000, flushIntervalMs: 1000 }`.
   - `bootstrapDispatchMs`: throttle UI updates while bootstrapping NDJSON (default 200).

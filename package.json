@@ -12,6 +12,9 @@
     "dist/package.json"
   ],
   "repository": "github.com:unsuspecting-noob/cucumber-reactive-reporter.git",
+  "engines": {
+    "node": ">=22"
+  },
   "keywords": [
     "cucumber",
     "cucumberjs",
@@ -33,7 +36,7 @@
     "testinstall": "node devtest.mjs && touch test/.nojekyll",
     "updatedocs": "node updateSampleReport.mjs",
     "test": "react-scripts test",
-    "test:node": "node --test",
+    "test:node": "node --test test/*.test.mjs",
     "eject": "react-scripts eject",
     "prepublishOnly": "npm run generatedist"
   },

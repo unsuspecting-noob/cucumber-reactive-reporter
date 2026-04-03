@@ -6,6 +6,7 @@ import {
   getPassedStepsByScenarioId,
   getPassedStepsNoBoilerByScenarioId,
   getStepsByScenarioId,
+  getSkippedStepsNoBoilerByScenarioId,
   getSkippedStepsByScenarioId,
 } from "../store/steps";
 import { useDispatch, useSelector } from "react-redux";
@@ -32,6 +33,7 @@ const ScenarioContainer = (props) => {
   } = useSelector((state) => getScenarioById(state, props)); //{id}
   let failedSteps = useSelector((state) => getFailedStepsByScenarioId(state, props));
   let skippedSteps = useSelector((state) => getSkippedStepsByScenarioId(state, props));
+  let skippedStepsNoExtra = useSelector((state) => getSkippedStepsNoBoilerByScenarioId(state, props));
   let passedSteps = useSelector((state) => getPassedStepsByScenarioId(state, props));
   let passedStepsNoExtra = useSelector((state) => getPassedStepsNoBoilerByScenarioId(state, props));
   let allSteps = useSelector((state) => getStepsByScenarioId(state, props));
@@ -164,7 +166,7 @@ const ScenarioContainer = (props) => {
                 <Stack direction="row" spacing={0.5} alignItems="center">
                   {passedStepsNoExtra.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: green[700], borderRadius: "11px", fontSize: "0.75rem", fontWeight: 600 }}>{showExtra ? passedSteps.length : passedStepsNoExtra.length}</Box>
                   ) : null}
-                  {skippedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: yellow[700], borderRadius: "11px", fontSize: "0.75rem", fontWeight: 600 }}>{skippedSteps.length}</Box>) : null}
+                  {(showExtra ? skippedSteps.length : skippedStepsNoExtra.length) > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: yellow[700], borderRadius: "11px", fontSize: "0.75rem", fontWeight: 600 }}>{showExtra ? skippedSteps.length : skippedStepsNoExtra.length}</Box>) : null}
                   {failedSteps.length > 0 ? (<Box sx={{ ...commonBoxStyles, backgroundColor: red[700], borderRadius: "11px", fontSize: "0.75rem", fontWeight: 600 }}>{failedSteps.length}</Box>) : null}
                 </Stack>
               </Box>

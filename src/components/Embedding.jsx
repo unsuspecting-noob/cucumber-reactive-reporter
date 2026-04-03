@@ -9,6 +9,12 @@ import React from "react";
 import TextArea from './TextArea';
 import { blueGrey } from '@mui/material/colors';
 import { commonCellStyle } from './styles/commonStyles';
+import {
+    isImageMimeType,
+    isJsonLikeMimeType,
+    isXmlLikeMimeType,
+    normalizeMimeType
+} from "../utils/mime.mjs";
 
 const copyFabWrapperSx = {
     position: "absolute",
@@ -52,111 +58,112 @@ const Embedding = (props) => {
 
     let renderOne = (item, key) => {
         let value = item.media ? item.media : item.data;
-        let _mime = item.mime_type ? item.mime_type : item.media?.type;
-        let arr = _mime.split(";");
-        let mime = arr[0];
-        switch (mime) {
-            case "text/html":
-                value = value.replace('\\n', '\n'); //really for html only
-                return (
-                    <TableRow key={key} hover>
-                        <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
-                            <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
-                                <CopyToClipboard text={value}>
-                                    <Fab color="primary" aria-label="copy to clipboard" size="small">
-                                        <ContentCopy />
-                                    </Fab>
-                                </CopyToClipboard>
-                            </Box>
-                            <div dangerouslySetInnerHTML={{ __html: value }} style={{ maxWidth: "100%" }} />
-                        </TableCell>
-                    </TableRow>
-                )
-            case "text/xml":
-            case "application/xml":
-                return (
-                    <TableRow key={key} hover>
-                        <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
-                            <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
-                                <CopyToClipboard text={value}>
-                                    <Fab color="primary" aria-label="copy to clipboard" size="small">
-                                        <ContentCopy />
-                                    </Fab>
-                                </CopyToClipboard>
-                            </Box>
-                            <TextArea
-                                content={value}
-                                type="xml"
-                                themeName={themeName}
-                                sourceKey={key}
-                            />
-                        </TableCell>
-                    </TableRow>
-                )
-            case "application/json":
-                let obj;
-                try {
-                    obj = JSON.parse(value);
-                    value = JSON.stringify(obj, null, 2); //pretty format
-
-                    if (!obj) obj = {}; //this is a fix for when response returns "" which shows up in json as "\"\"" and then json viewer borks up
-                } catch (e) {
-                    value = e.message;
-                }
-                return (
-                    <TableRow key={key} hover>
-                        <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
-                            <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
-                                <CopyToClipboard text={value}>
-                                    <Fab color="primary" aria-label="copy to clipboard" size="small">
-                                        <ContentCopy />
-                                    </Fab>
-                                </CopyToClipboard>
-                            </Box>
-                            <TextArea
-                                content={value}
-                                type="json"
-                                themeName={themeName}
-                                sourceKey={key}
-                            />
-                        </TableCell>
-                    </TableRow>
-                )
-            case "image/png":
-                return (
-                    <TableRow key={key} hover>
-                        <TableCell align="center" style={{ ...commonCellStyle }}>
-                            {value ? <img src={`data:image/png;base64,${value}`}
-                                alt=""
-                                style={{
-                                    maxWidth: "100%",
-                                    objectFit: "scale-down"
-                                }}
-                            /> : ''}
-                        </TableCell>
-                    </TableRow>
-                );
-            case "text/plain":
-            default:
-                return (
-                    <TableRow key={key} hover>
-                        <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
-                            <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
-                                <CopyToClipboard text={value}>
-                                    <Fab color="primary" aria-label="copy to clipboard" size="small">
-                                        <ContentCopy />
-                                    </Fab>
-                                </CopyToClipboard>
-                            </Box>
-                            <TextArea
-                                content={value}
-                                themeName={themeName}
-                                sourceKey={key}
-                            />
-                        </TableCell>
-                    </TableRow>
-                )
+        let mime = normalizeMimeType(item.mime_type ? item.mime_type : item.media?.type);
+        if (mime === "text/html") {
+            value = value.replace('\\n', '\n'); //really for html only
+            return (
+                <TableRow key={key} hover>
+                    <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
+                        <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
+                            <CopyToClipboard text={value}>
+                                <Fab color="primary" aria-label="copy to clipboard" size="small">
+                                    <ContentCopy />
+                                </Fab>
+                            </CopyToClipboard>
+                        </Box>
+                        <div dangerouslySetInnerHTML={{ __html: value }} style={{ maxWidth: "100%" }} />
+                    </TableCell>
+                </TableRow>
+            )
         }
+
+        if (isXmlLikeMimeType(mime)) {
+            return (
+                <TableRow key={key} hover>
+                    <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
+                        <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
+                            <CopyToClipboard text={value}>
+                                <Fab color="primary" aria-label="copy to clipboard" size="small">
+                                    <ContentCopy />
+                                </Fab>
+                            </CopyToClipboard>
+                        </Box>
+                        <TextArea
+                            content={value}
+                            type="xml"
+                            themeName={themeName}
+                            sourceKey={key}
+                        />
+                    </TableCell>
+                </TableRow>
+            )
+        }
+
+        if (isJsonLikeMimeType(mime)) {
+            let obj;
+            try {
+                obj = JSON.parse(value);
+                value = JSON.stringify(obj, null, 2); //pretty format
+
+                if (!obj) obj = {}; //this is a fix for when response returns "" which shows up in json as "\"\"" and then json viewer borks up
+            } catch (e) {
+                value = e.message;
+            }
+            return (
+                <TableRow key={key} hover>
+                    <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
+                        <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
+                            <CopyToClipboard text={value}>
+                                <Fab color="primary" aria-label="copy to clipboard" size="small">
+                                    <ContentCopy />
+                                </Fab>
+                            </CopyToClipboard>
+                        </Box>
+                        <TextArea
+                            content={value}
+                            type="json"
+                            themeName={themeName}
+                            sourceKey={key}
+                        />
+                    </TableCell>
+                </TableRow>
+            )
+        }
+
+        if (isImageMimeType(mime)) {
+            return (
+                <TableRow key={key} hover>
+                    <TableCell align="center" style={{ ...commonCellStyle }}>
+                        {value ? <img src={`data:${mime};base64,${value}`}
+                            alt={`${mime} attachment`}
+                            style={{
+                                maxWidth: "100%",
+                                objectFit: "scale-down"
+                            }}
+                        /> : ''}
+                    </TableCell>
+                </TableRow>
+            );
+        }
+
+        return (
+            <TableRow key={key} hover>
+                <TableCell align="center" style={commonCellStyle} sx={hoverCellSx}>
+                    <Box className="copy-fab-wrapper" sx={copyFabWrapperSx}>
+                        <CopyToClipboard text={value}>
+                            <Fab color="primary" aria-label="copy to clipboard" size="small">
+                                <ContentCopy />
+                            </Fab>
+                        </CopyToClipboard>
+                    </Box>
+                    <TextArea
+                        content={value}
+                        themeName={themeName}
+                        sourceKey={key}
+                    />
+                </TableCell>
+            </TableRow>
+        )
     }
 
     return (

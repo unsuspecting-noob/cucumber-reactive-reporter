@@ -4,6 +4,13 @@ import { createSelector } from "reselect";
 import { createSlice } from "@reduxjs/toolkit";
 import { getLastEnteredSearchValue } from "./uistates";
 import parseTags from '@cucumber/tag-expressions';
+import {
+  applyStepToScenarioCounts,
+  createScenarioStepCounts,
+  scenarioHasFailures,
+  scenarioIsPassed,
+  scenarioIsSkipped
+} from "../utils/stepCounts.mjs";
 
 //Reducers
 let slice = createSlice({
@@ -27,14 +34,12 @@ let slice = createSlice({
       const { featureId } = action.payload.featureId;
       scenarios.list.push(id);
       scenarios.scenariosMap[id] = {
-        failedSteps: 0,
+        ...createScenarioStepCounts(),
         featureId,
         id,
         keyword,
         line,
         name,
-        passedSteps: 0,
-        skippedSteps: 0,
         tags,
         type,
         uri
@@ -43,21 +48,10 @@ let slice = createSlice({
   },
   extraReducers: {
     "steps/stepAdded": (scenarios, action) => {
-      const {
-        hidden,
-        result: { status },
-        embeddings,
-      } = action.payload.step;
       let scenarioId = action.payload.scenarioId;
-      if (!hidden || (embeddings && embeddings.length)) {
-        if (status === "passed") {
-          scenarios.scenariosMap[scenarioId].passedSteps++;
-        } else if (status === "skipped") {
-          scenarios.scenariosMap[scenarioId].skippedSteps++;
-        }
-      }
-      if (status === "failed") {
-        scenarios.scenariosMap[scenarioId].failedSteps++;
+      const scenario = scenarios.scenariosMap[scenarioId];
+      if (scenario) {
+        applyStepToScenarioCounts(scenario, action.payload.step);
       }
     },
   },
@@ -127,13 +121,11 @@ const _getAllScenariosForFeatureWithState = createSelector(
           case FeaturesToggleValuesEnum.ALL:
             return true;
           case FeaturesToggleValuesEnum.PASSED:
-            return scenario.passedSteps > 0
-              && scenario.failedSteps === 0
-              && scenario.skippedSteps === 0;
+            return scenarioIsPassed(scenario);
           case FeaturesToggleValuesEnum.FAILED:
-            return scenario.failedSteps !== 0;
+            return scenarioHasFailures(scenario);
           case FeaturesToggleValuesEnum.SKIPPED:
-            return scenario.skippedSteps !== 0 && scenario.failedSteps === 0;
+            return scenarioIsSkipped(scenario);
           default:
             return false;
         }

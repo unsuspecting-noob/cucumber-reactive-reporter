@@ -2,6 +2,12 @@ import { createSelector } from "reselect";
 import { createSlice } from "@reduxjs/toolkit";
 import { getLastEnteredSearchValue } from "./uistates";
 import parseTags from '@cucumber/tag-expressions'
+import {
+  calculateScenarioStepCounts,
+  scenarioHasFailures,
+  scenarioIsPassed,
+  scenarioIsSkipped
+} from "../utils/stepCounts.mjs";
 
 //Reducers
 const defaultState = {
@@ -39,15 +45,11 @@ let slice = initState => createSlice({
             });
           }
           if (el.steps?.length) {
-            for (let step of el.steps) {
-              if (step.result?.status === "failed") {
-                numFailedScenarios++;
-                break;
-              }
-              if (step.result?.status === "skipped") {
-                numSkippedScenarios++;
-                break;
-              }
+            const scenarioCounts = calculateScenarioStepCounts(el.steps);
+            if (scenarioHasFailures(scenarioCounts)) {
+              numFailedScenarios++;
+            } else if (scenarioIsSkipped(scenarioCounts)) {
+              numSkippedScenarios++;
             }
           }
         }
@@ -116,7 +118,7 @@ export const getTotalNumberOfFailedScenarios = createSelector(
       let featureId = item.id;
       let scenarios = Object.values(state.scenarios.scenariosMap).filter(
         (sc) => {
-          return sc.id.startsWith(featureId) && sc.failedSteps;
+          return sc.id.startsWith(featureId) && scenarioHasFailures(sc);
         }
       );
       return (total += scenarios.length);
@@ -133,9 +135,7 @@ export const getTotalNumberOfPassedScenarios = createSelector(
       let featureId = item.id;
       let scenarios = Object.values(state.scenarios.scenariosMap).filter(
         (sc) => {
-          return (
-            sc.id.startsWith(featureId) && !sc.failedSteps && sc.passedSteps && !sc.skippedSteps
-          );
+          return sc.id.startsWith(featureId) && scenarioIsPassed(sc);
         }
       );
       return (total += scenarios.length);
@@ -152,12 +152,7 @@ export const getTotalNumberOfSkippedScenarios = createSelector(
       let featureId = item.id;
       let scenarios = Object.values(state.scenarios.scenariosMap).filter(
         (sc) => {
-          return (
-            sc.id.startsWith(featureId) &&
-            !sc.failedSteps &&
-            !sc.passedSteps &&
-            sc.skippedSteps
-          );
+          return sc.id.startsWith(featureId) && scenarioIsSkipped(sc);
         }
       );
       return (total += scenarios.length);
@@ -173,7 +168,7 @@ export const getFailedScenariosByFeatureId = (
   let scens = Object.values(
     state.scenarios.scenariosMap
   ).filter((sc) => {
-    return sc.id.startsWith(featureId) && sc.failedSteps;
+    return sc.id.startsWith(featureId) && scenarioHasFailures(sc);
   });
 
   return scens;
@@ -187,7 +182,7 @@ export const getPassedScenariosByFeatureId = (
   let scens = Object.values(
     state.scenarios.scenariosMap
   ).filter((sc) => {
-    return sc.id.startsWith(featureId) && !sc.failedSteps && sc.passedSteps;
+    return sc.id.startsWith(featureId) && scenarioIsPassed(sc);
   });
 
   return scens;
@@ -200,7 +195,7 @@ export const getSkippedScenariosByFeatureId = (
   let scens = Object.values(
     state.scenarios.scenariosMap
   ).filter((sc) => {
-    return sc.id.startsWith(featureId) && sc.skippedSteps && !sc.failedSteps;
+    return sc.id.startsWith(featureId) && scenarioIsSkipped(sc);
   });
 
   return scens;

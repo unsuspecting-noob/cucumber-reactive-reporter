@@ -50,6 +50,11 @@ import {
 } from "../store/scenarios";
 import { getTotalDurationNanoSec } from "../store/steps";
 import { styled } from '@mui/material/styles';
+import {
+    scenarioHasFailures,
+    scenarioIsPassed,
+    scenarioIsSkipped
+} from "../utils/stepCounts.mjs";
 
 const TopBar = ({
     onToggleSummary,
@@ -117,15 +122,13 @@ const TopBar = ({
             numCurrentScenarios = tempScenarios.length;
             break;
         case FeaturesToggleValuesEnum.FAILED:
-            numCurrentScenarios = tempScenarios.reduce((previous, current) => {
-                return previous + current.failedSteps
-            }, 0);
+            numCurrentScenarios = tempScenarios.filter((scenario) => scenarioHasFailures(scenario)).length;
             break;
         case FeaturesToggleValuesEnum.PASSED:
-            numCurrentScenarios = tempScenarios.filter((s) => s.failedSteps === 0 && s.skippedSteps === 0).length;
+            numCurrentScenarios = tempScenarios.filter((scenario) => scenarioIsPassed(scenario)).length;
             break;
         case FeaturesToggleValuesEnum.SKIPPED:
-            numCurrentScenarios = tempScenarios.filter((s) => s.failedSteps === 0 && s.skippedSteps !== 0).length;
+            numCurrentScenarios = tempScenarios.filter((scenario) => scenarioIsSkipped(scenario)).length;
             break;
         default:
             break;

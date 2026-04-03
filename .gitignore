@@ -14,7 +14,8 @@
 #this is what gets published
 /dist
 #this is generated for testing reporter.generate() function with some sample cucumber json
-/test
+/test/*
+!/test/*.test.mjs
 #this is /build, but with files renamed: react-scripts generates a bunch of randomized file names which is a bit of a pain to include with dist, so we "normalize" all the file names with a rename script.
 /react
 

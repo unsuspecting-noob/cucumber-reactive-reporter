@@ -78,6 +78,7 @@ const _makeSafe = (input) => {
  * @param {"legacy-json"|"auto"} [options.inputFormat] input JSON format selector
  * @param {"auto"|"base64"|"raw"} [options.attachmentsEncoding] attachment encoding
  * @param {string} [options.cucumberVersion] cucumber version (for encoding hints)
+ * @param {boolean} [options.suppressMetadataAttachments] hide runner-generated metadata attachments
  * @returns {Promise<void>} resolves when report assets are written
  * @throws {Error} when input JSON is invalid or unsupported
  * @example
@@ -104,6 +105,7 @@ const generate = async (source, dest, options) => {
         inputFormat = "legacy-json",
         attachmentsEncoding,
         cucumberVersion,
+        suppressMetadataAttachments = true,
         live
     } = options;
     const pkg = require("./package.json");
@@ -162,6 +164,7 @@ const generate = async (source, dest, options) => {
             title,
             settings,
             attachmentsEncoding,
+            suppressMetadataAttachments,
             liveOptions
         });
         return;
@@ -171,7 +174,8 @@ const generate = async (source, dest, options) => {
     const out = await loadStoreState(source, {
         inputFormat,
         attachmentsEncoding,
-        cucumberVersion
+        cucumberVersion,
+        suppressMetadataAttachments
     });
     let modifiedJSON = JSON.stringify(out);
     let destExists = true;
@@ -200,6 +204,7 @@ const generateLive = async ({
     title,
     settings,
     attachmentsEncoding,
+    suppressMetadataAttachments,
     liveOptions
 }) => {
     ensureDestination(dest);
@@ -208,7 +213,10 @@ const generateLive = async ({
     fs.writeFileSync(path.join(dest, settingsPath), JSON.stringify(settings));
     patchIndexTitle(dest, title);
 
-    const builder = createMessageStateBuilder({ attachmentsEncoding });
+    const builder = createMessageStateBuilder({
+        attachmentsEncoding,
+        suppressMetadataAttachments
+    });
     let lastFlush = 0;
     const flushIntervalMs = Math.max(0, liveOptions.flushIntervalMs);
 
@@ -233,17 +241,26 @@ const loadStoreState = async (
     {
         inputFormat,
         attachmentsEncoding,
-        cucumberVersion
+        cucumberVersion,
+        suppressMetadataAttachments
     }
 ) => {
     if (inputFormat === "message") {
         const envelopes = readMessageEnvelopes(source);
-        return prepareStoreStateFromMessageStream(envelopes, { attachmentsEncoding });
+        return prepareStoreStateFromMessageStream(envelopes, {
+            attachmentsEncoding,
+            suppressMetadataAttachments
+        });
     }
 
     const rawText = fs.readFileSync(source, "utf8");
     const parsed = parseInputData(source, rawText);
-    return prepareStoreState(parsed, { inputFormat, attachmentsEncoding, cucumberVersion });
+    return prepareStoreState(parsed, {
+        inputFormat,
+        attachmentsEncoding,
+        cucumberVersion,
+        suppressMetadataAttachments
+    });
 };
 
 // Keep this in sync with cucumber-js envelope emitters and gherkin-stream output.

@@ -8,6 +8,19 @@
  * See: /agents.md
  */
 
+import {
+  isJsonLikeMimeType,
+  normalizeMimeType,
+  shouldDecodeTextEmbedding
+} from "../utils/mime.mjs";
+import { isSuppressedMetadataAttachment } from "../utils/metadataAttachments.mjs";
+import {
+  applyStepToScenarioCounts,
+  createScenarioStepCounts,
+  scenarioHasFailures,
+  scenarioIsSkipped
+} from "../utils/stepCounts.mjs";
+
 const INPUT_FORMAT_HELP = [
   'inputFormat must be "legacy-json", "message", or "auto".',
   'Use "message" for --format message:<file> output.',
@@ -20,18 +33,6 @@ const ATTACHMENTS_ENCODING_HELP = [
   'Use "base64" to decode text attachments when contentEncoding is BASE64.',
   'Use "auto" to respect contentEncoding for message streams.'
 ].join(" ");
-
-const normalizeMimeType = (value) => String(value ?? "").split(";")[0].trim().toLowerCase();
-
-const shouldDecodeEmbedding = (mimeType) => {
-  if (!mimeType) {
-    return false;
-  }
-  if (mimeType.startsWith("text/")) {
-    return true;
-  }
-  return mimeType === "application/json" || mimeType === "application/xml";
-};
 
 const looksLikeBase64 = (value) => {
   if (typeof value !== "string") {
@@ -426,11 +427,14 @@ const normalizeStepArguments = (pickleStep) => {
   return args;
 };
 
-const normalizeAttachment = (attachment, { attachmentsEncoding }) => {
+const normalizeAttachment = (
+  attachment,
+  { attachmentsEncoding, suppressMetadataAttachments }
+) => {
   const mimeType = normalizeMimeType(attachment.mediaType);
   let data = attachment.body ?? "";
   if (attachmentsEncoding === "raw") {
-    if (mimeType === "application/json") {
+    if (isJsonLikeMimeType(mimeType)) {
       const formatted = formatJsonText(data);
       if (formatted) {
         data = formatted;
@@ -441,10 +445,10 @@ const normalizeAttachment = (attachment, { attachmentsEncoding }) => {
 
   const encoding = String(attachment.contentEncoding ?? "").toUpperCase();
   if (encoding === "BASE64" && typeof data === "string") {
-    if (shouldDecodeEmbedding(mimeType)) {
+    if (shouldDecodeTextEmbedding(mimeType)) {
       const decoded = decodeBase64Text(data);
       if (decoded) {
-        if (mimeType === "application/json") {
+        if (isJsonLikeMimeType(mimeType)) {
           const formatted = formatJsonText(decoded);
           if (formatted) {
             data = formatted;
@@ -456,11 +460,21 @@ const normalizeAttachment = (attachment, { attachmentsEncoding }) => {
         }
       }
     }
-  } else if (mimeType === "application/json" && typeof data === "string") {
+  } else if (isJsonLikeMimeType(mimeType) && typeof data === "string") {
     const formatted = formatJsonText(data);
     if (formatted) {
       data = formatted;
     }
+  }
+
+  if (
+    suppressMetadataAttachments
+    && isSuppressedMetadataAttachment({
+      mimeType,
+      data
+    })
+  ) {
+    return null;
   }
 
   return { data, mime_type: mimeType };
@@ -542,7 +556,9 @@ const buildScenarioSteps = (acc, testCase, pickle, uri, options) => {
       const status = normalizeStatus(result.status);
       const error_message = result.message ?? result.exception?.message;
       const attachments = acc.attachmentsByTestStepId.get(testStep.id) ?? [];
-      const embeddings = attachments.map((item) => normalizeAttachment(item, options));
+      const embeddings = attachments
+        .map((item) => normalizeAttachment(item, options))
+        .filter(Boolean);
       const args = normalizeStepArguments(pickleStep);
       const line = gherkinStep?.line;
       steps.push({
@@ -564,7 +580,9 @@ const buildScenarioSteps = (acc, testCase, pickle, uri, options) => {
       const status = normalizeStatus(result.status);
       const error_message = result.message ?? result.exception?.message;
       const attachments = acc.attachmentsByTestStepId.get(testStep.id) ?? [];
-      const embeddings = attachments.map((item) => normalizeAttachment(item, options));
+      const embeddings = attachments
+        .map((item) => normalizeAttachment(item, options))
+        .filter(Boolean);
       const keyword = mapHookKeyword(hook);
       const line = hook?.sourceReference?.location?.line;
       steps.push({
@@ -629,14 +647,12 @@ const finalizeState = (acc, options) => {
 
     const scenarioTags = resolvePickleTags(pickle.tags, acc.gherkinTagById);
     const scenario = {
-      failedSteps: 0,
+      ...createScenarioStepCounts(),
       featureId,
       id: scenarioId,
       keyword: scenarioMeta?.keyword ?? "Scenario",
       line: scenarioMeta?.line,
       name: pickle.name ?? scenarioMeta?.name ?? "Scenario",
-      passedSteps: 0,
-      skippedSteps: 0,
       tags: scenarioTags,
       type: scenarioMeta?.type ?? "scenario",
       uri
@@ -653,23 +669,14 @@ const finalizeState = (acc, options) => {
       if (Number.isFinite(step.duration)) {
         state.steps.totalDurationNanoSec += step.duration;
       }
-      if (!step.hidden || (step.embeddings && step.embeddings.length)) {
-        if (step.status === "passed") {
-          scenario.passedSteps += 1;
-        } else if (step.status === "skipped") {
-          scenario.skippedSteps += 1;
-        }
-      }
-      if (step.status === "failed") {
-        scenario.failedSteps += 1;
-      }
+      applyStepToScenarioCounts(scenario, step);
     }
 
     const featureEntry = state.features.featuresMap[featureId];
     appendUniqueTags(featureEntry.allTags, scenarioTags);
-    if (scenario.failedSteps > 0) {
+    if (scenarioHasFailures(scenario)) {
       featureEntry.numFailedScenarios += 1;
-    } else if (scenario.skippedSteps > 0) {
+    } else if (scenarioIsSkipped(scenario)) {
       featureEntry.numSkippedScenarios += 1;
     }
   }
@@ -695,7 +702,9 @@ const normalizeInput = (input) => {
  * builder.ingest(envelope);
  * const state = builder.buildState();
  */
-export const createMessageStateBuilder = ({ attachmentsEncoding } = {}) => {
+export const createMessageStateBuilder = (
+  { attachmentsEncoding, suppressMetadataAttachments = true } = {}
+) => {
   const resolvedEncoding = resolveAttachmentsEncoding(attachmentsEncoding);
   const acc = createAccumulator();
 
@@ -707,7 +716,10 @@ export const createMessageStateBuilder = ({ attachmentsEncoding } = {}) => {
       }
       applyEnvelope(acc, normalized);
     },
-    buildState: () => finalizeState(acc, { attachmentsEncoding: resolvedEncoding })
+    buildState: () => finalizeState(acc, {
+      attachmentsEncoding: resolvedEncoding,
+      suppressMetadataAttachments
+    })
   };
 };
 
@@ -723,7 +735,7 @@ export const createMessageStateBuilder = ({ attachmentsEncoding } = {}) => {
  */
 export const prepareStoreStateFromMessageStream = async (
   input,
-  { attachmentsEncoding } = {}
+  { attachmentsEncoding, suppressMetadataAttachments = true } = {}
 ) => {
   if (!input || typeof input[Symbol.asyncIterator] !== "function") {
     throw new Error(INPUT_FORMAT_HELP);
@@ -740,7 +752,10 @@ export const prepareStoreStateFromMessageStream = async (
     applyEnvelope(acc, normalized);
   }
 
-  return finalizeState(acc, { attachmentsEncoding: resolvedEncoding });
+  return finalizeState(acc, {
+    attachmentsEncoding: resolvedEncoding,
+    suppressMetadataAttachments
+  });
 };
 
 /**
@@ -755,7 +770,7 @@ export const prepareStoreStateFromMessageStream = async (
  */
 export const prepareStoreStateFromMessages = (
   input,
-  { attachmentsEncoding } = {}
+  { attachmentsEncoding, suppressMetadataAttachments = true } = {}
 ) => {
   const envelopes = normalizeInput(input);
   if (!envelopes) {
@@ -769,5 +784,8 @@ export const prepareStoreStateFromMessages = (
     applyEnvelope(acc, envelope);
   }
 
-  return finalizeState(acc, { attachmentsEncoding: resolvedEncoding });
+  return finalizeState(acc, {
+    attachmentsEncoding: resolvedEncoding,
+    suppressMetadataAttachments
+  });
 };

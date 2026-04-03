@@ -1,6 +1,6 @@
 Some notes about development and maintainance:
 
-Node baseline is 24+.
+Node baseline is 22+.
 
 npm run start - runs local dev version for react development, this relies on Public folder to have _cucumber-results.json and _reporter_settings.json files to load the page.
 

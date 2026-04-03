@@ -1,5 +1,9 @@
 import { createSelector } from "reselect";
 import { createSlice } from "@reduxjs/toolkit";
+import { isHookKeyword } from "../utils/stepCounts.mjs";
+
+const hasStepArtifacts = (step) =>
+  Boolean(step?.error_message || step?.embeddings?.length || step?.args?.length);
 
 //Reducers
 let slice = createSlice({
@@ -14,6 +18,7 @@ let slice = createSlice({
       const {
         arguments: args,
         embeddings,
+        hidden,
         keyword,
         line,
         match: {
@@ -33,6 +38,7 @@ let slice = createSlice({
         duration,
         embeddings,
         error_message,
+        hidden,
         keyword,
         line,
         location,
@@ -51,20 +57,35 @@ let slice = createSlice({
 
 //SELECTORS
 export const getStepsByScenarioId = (state, { id }) => {
-  return state.steps.stepsMap[id].steps;
+  return state.steps.stepsMap[id]?.steps ?? [];
 };
 
 export const getStepsNoBoilerByScenarioId = createSelector([
   (state) => state.steps.stepsMap,
   (state, { id }) => id
 ], (stepsMap, id) => {
-  return stepsMap[id].steps.filter((s) => { if (s.keyword === "Before" || s.keyword === "After") { return false; } else return true; });
+  const steps = stepsMap[id]?.steps ?? [];
+  return steps.filter((step) => step?.hidden !== true && !isHookKeyword(step?.keyword));
+});
+
+export const getHookArtifactStepsByScenarioId = createSelector([
+  (state) => state.steps.stepsMap,
+  (state, { id }) => id
+], (stepsMap, id) => {
+  const steps = stepsMap[id]?.steps ?? [];
+  return steps.filter((step) => (step?.hidden === true || isHookKeyword(step?.keyword)) && hasStepArtifacts(step));
 });
 
 export const getPassedStepsNoBoilerByScenarioId = createSelector([
   getStepsNoBoilerByScenarioId
 ], (steps) => {
   return steps.filter((s) => s.status === "passed");
+});
+
+export const getSkippedStepsNoBoilerByScenarioId = createSelector([
+  getStepsNoBoilerByScenarioId
+], (steps) => {
+  return steps.filter((s) => s.status === "skipped");
 });
 
 export const getTotalDurationNanoSec = (state) => {
@@ -76,7 +97,7 @@ export const getFailedStepsByScenarioId = createSelector([
   (state) => state.steps.stepsMap,
   (state, { id }) => id
 ], (stepsMap, id) => {
-  let l = stepsMap[id].steps;
+  let l = stepsMap[id]?.steps ?? [];
   let f = l.filter((st) => st.status === "failed");
   return f;
 });
@@ -84,7 +105,7 @@ export const getPassedStepsByScenarioId = createSelector([
   (state) => state.steps.stepsMap,
   (state, { id }) => id
 ], (stepsMap, id) => {
-  let l = stepsMap[id].steps;
+  let l = stepsMap[id]?.steps ?? [];
   let f = l.filter((st) => st.status === "passed");
   return f;
 });
@@ -93,7 +114,7 @@ export const getSkippedStepsByScenarioId = createSelector([
   (state) => state.steps.stepsMap,
   (state, { id }) => id
 ], (stepsMap, id) => {
-  let l = stepsMap[id].steps;
+  let l = stepsMap[id]?.steps ?? [];
   let f = l.filter((st) => st.status === "skipped");
   return f;
 });

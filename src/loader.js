@@ -67,7 +67,7 @@ const startLivePolling = (store, metadata) => {
   const liveOptions = metadata.live ?? {};
   const transport = liveOptions.source ?? (metadata.inputFormat === "message" ? "message" : "state");
   if (transport === "message") {
-    startMessagePolling(store, liveOptions, () => startStatePolling(store, liveOptions));
+    startMessagePolling(store, metadata, liveOptions, () => startStatePolling(store, liveOptions));
     return;
   }
   startStatePolling(store, liveOptions);
@@ -112,7 +112,7 @@ const startStatePolling = (store, liveOptions) => {
   setInterval(poll, pollIntervalMs);
 };
 
-const startMessagePolling = (store, liveOptions, fallbackToState) => {
+const startMessagePolling = (store, metadata, liveOptions, fallbackToState) => {
   const pollIntervalMs = Math.max(500, Number(liveOptions?.pollIntervalMs) || 2000);
   const messagePath = liveOptions?.messagePath ?? "cucumber-messages.ndjson";
   const guard = createLiveGuard();
@@ -120,7 +120,8 @@ const startMessagePolling = (store, liveOptions, fallbackToState) => {
   let offset = 0;
   let missingCount = 0;
   let builder = createMessageStateBuilder({
-    attachmentsEncoding: liveOptions?.attachmentsEncoding
+    attachmentsEncoding: liveOptions?.attachmentsEncoding,
+    suppressMetadataAttachments: metadata?.suppressMetadataAttachments
   });
   const decoder = createStreamingDecoder();
   const ndjsonBuffer = createNdjsonBuffer({
@@ -137,7 +138,8 @@ const startMessagePolling = (store, liveOptions, fallbackToState) => {
   const resetParser = () => {
     ndjsonBuffer.reset();
     builder = createMessageStateBuilder({
-      attachmentsEncoding: liveOptions?.attachmentsEncoding
+      attachmentsEncoding: liveOptions?.attachmentsEncoding,
+      suppressMetadataAttachments: metadata?.suppressMetadataAttachments
     });
     decoder.reset();
   };

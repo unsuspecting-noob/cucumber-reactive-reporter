@@ -10,6 +10,19 @@
  */
 
 import { prepareStoreStateFromMessages } from "./cucumberMessageAdapter.mjs";
+import {
+  isJsonLikeMimeType,
+  isXmlLikeMimeType,
+  normalizeMimeType,
+  shouldDecodeTextEmbedding
+} from "../utils/mime.mjs";
+import { isSuppressedMetadataAttachment } from "../utils/metadataAttachments.mjs";
+import {
+  applyStepToScenarioCounts,
+  createScenarioStepCounts,
+  scenarioHasFailures,
+  scenarioIsSkipped
+} from "../utils/stepCounts.mjs";
 
 const LEGACY_FORMAT_HELP = [
   "Unsupported cucumber output format.",
@@ -31,18 +44,6 @@ const ATTACHMENTS_ENCODING_HELP = [
   'Use "base64" if text attachments are base64-encoded.',
   'Use "auto" to decode base64-looking text attachments.'
 ].join(" ");
-
-const normalizeMimeType = (value) => String(value ?? "").split(";")[0].trim().toLowerCase();
-
-const shouldDecodeEmbedding = (mimeType) => {
-  if (!mimeType) {
-    return false;
-  }
-  if (mimeType.startsWith("text/")) {
-    return true;
-  }
-  return mimeType === "application/json" || mimeType === "application/xml";
-};
 
 const looksLikeBase64 = (value) => {
   if (typeof value !== "string") {
@@ -106,52 +107,64 @@ const formatJsonText = (value) => {
   }
 };
 
-const normalizeEmbeddings = (embeddings, { attachmentsEncoding }) => {
+const normalizeEmbeddings = (embeddings, { attachmentsEncoding, suppressMetadataAttachments }) => {
   if (!Array.isArray(embeddings)) {
     return embeddings;
   }
-  return embeddings.map((embedding) =>
-    normalizeEmbedding(embedding, { attachmentsEncoding })
-  );
+  return embeddings
+    .map((embedding) => normalizeEmbedding(embedding, {
+      attachmentsEncoding,
+      suppressMetadataAttachments
+    }))
+    .filter(Boolean);
 };
 
-const normalizeEmbedding = (embedding, { attachmentsEncoding }) => {
+const normalizeEmbedding = (
+  embedding,
+  { attachmentsEncoding, suppressMetadataAttachments }
+) => {
   if (!embedding || typeof embedding !== "object") {
     return embedding;
   }
   const mimeType = normalizeMimeType(embedding.mime_type ?? embedding.media?.type);
+  let normalized = embedding;
   if (attachmentsEncoding === "raw") {
-    if (mimeType === "application/json" && typeof embedding.data === "string") {
+    if (isJsonLikeMimeType(mimeType) && typeof embedding.data === "string") {
       const formatted = formatJsonText(embedding.data);
       if (formatted) {
-        return { ...embedding, data: formatted };
+        normalized = { ...embedding, data: formatted };
       }
     }
-    return embedding;
-  }
-  if (!shouldDecodeEmbedding(mimeType)) {
-    return embedding;
-  }
-  if (typeof embedding.data !== "string") {
-    return embedding;
-  }
-  // Legacy cucumber JSON embeds text payloads as base64; decode for readable output.
-  const decoded = decodeBase64Text(embedding.data);
-  if (!decoded) {
-    return embedding;
-  }
-  if (mimeType === "application/json") {
-    const formatted = formatJsonText(decoded);
-    if (!formatted) {
-      return embedding;
-    }
-    return { ...embedding, data: formatted };
-  } else if (["application/xml", "text/xml", "text/html"].includes(mimeType)) {
-    if (!decoded.includes("<")) {
-      return embedding;
+  } else if (shouldDecodeTextEmbedding(mimeType) && typeof embedding.data === "string") {
+    // Legacy cucumber JSON embeds text payloads as base64; decode for readable output.
+    const decoded = decodeBase64Text(embedding.data);
+    if (decoded) {
+      if (isJsonLikeMimeType(mimeType)) {
+        const formatted = formatJsonText(decoded);
+        if (formatted) {
+          normalized = { ...embedding, data: formatted };
+        }
+      } else if (isXmlLikeMimeType(mimeType) || mimeType === "text/html") {
+        if (decoded.includes("<")) {
+          normalized = { ...embedding, data: decoded };
+        }
+      } else {
+        normalized = { ...embedding, data: decoded };
+      }
     }
   }
-  return { ...embedding, data: decoded };
+
+  if (
+    suppressMetadataAttachments
+    && isSuppressedMetadataAttachment({
+      mimeType,
+      data: normalized.data
+    })
+  ) {
+    return null;
+  }
+
+  return normalized;
 };
 
 const resolveAttachmentsEncoding = ({ attachmentsEncoding, cucumberVersion }) => {
@@ -197,7 +210,8 @@ export const prepareStoreState = (
   {
     inputFormat = "legacy-json",
     attachmentsEncoding,
-    cucumberVersion
+    cucumberVersion,
+    suppressMetadataAttachments = true
   } = {}
 ) => {
   if (!["legacy-json", "message", "auto"].includes(inputFormat)) {
@@ -205,11 +219,17 @@ export const prepareStoreState = (
   }
 
   if (inputFormat === "message") {
-    return prepareStoreStateFromMessages(input, { attachmentsEncoding });
+    return prepareStoreStateFromMessages(input, {
+      attachmentsEncoding,
+      suppressMetadataAttachments
+    });
   }
 
   if (inputFormat === "auto" && looksLikeMessageStream(input)) {
-    return prepareStoreStateFromMessages(input, { attachmentsEncoding });
+    return prepareStoreStateFromMessages(input, {
+      attachmentsEncoding,
+      suppressMetadataAttachments
+    });
   }
 
   const resolvedEncoding = resolveAttachmentsEncoding({
@@ -233,7 +253,10 @@ export const prepareStoreState = (
     const feature = normalizeFeature(rawFeature, featureIndex);
     featureIndex += 1;
     processFeature(state, feature);
-    processFeatureElements(state, feature, { attachmentsEncoding: resolvedEncoding });
+    processFeatureElements(state, feature, {
+      attachmentsEncoding: resolvedEncoding,
+      suppressMetadataAttachments
+    });
   }
 
   return state;
@@ -386,16 +409,14 @@ const processFeature = (state, feature) => {
     }
 
     const steps = Array.isArray(element?.steps) ? element.steps : [];
+    const scenarioCounts = createScenarioStepCounts();
     for (const step of steps) {
-      const status = step?.result?.status;
-      if (status === "failed") {
-        numFailedScenarios += 1;
-        break;
-      }
-      if (status === "skipped") {
-        numSkippedScenarios += 1;
-        break;
-      }
+      applyStepToScenarioCounts(scenarioCounts, step);
+    }
+    if (scenarioHasFailures(scenarioCounts)) {
+      numFailedScenarios += 1;
+    } else if (scenarioIsSkipped(scenarioCounts)) {
+      numSkippedScenarios += 1;
     }
   }
 
@@ -427,21 +448,23 @@ const processScenario = (state, featureId, scenario) => {
 
   state.scenarios.list.push(id);
   state.scenarios.scenariosMap[id] = {
-    failedSteps: 0,
+    ...createScenarioStepCounts(),
     featureId,
     id,
     keyword,
     line,
     name,
-    passedSteps: 0,
-    skippedSteps: 0,
     tags: Array.isArray(tags) ? tags : [],
     type,
     uri
   };
 };
 
-const processFeatureElements = (state, feature, { attachmentsEncoding }) => {
+const processFeatureElements = (
+  state,
+  feature,
+  { attachmentsEncoding, suppressMetadataAttachments }
+) => {
   const elements = feature.elements;
   if (!elements.length) {
     return;
@@ -455,18 +478,33 @@ const processFeatureElements = (state, feature, { attachmentsEncoding }) => {
     const scenario = normalizeScenario(feature.id, rawScenario, scenarioIndex);
     scenarioIndex += 1;
     processScenario(state, feature.id, scenario);
-    processScenarioSteps(state, scenario, { attachmentsEncoding });
+    processScenarioSteps(state, scenario, {
+      attachmentsEncoding,
+      suppressMetadataAttachments
+    });
   }
 };
 
-const processScenarioSteps = (state, scenario, { attachmentsEncoding }) => {
+const processScenarioSteps = (
+  state,
+  scenario,
+  { attachmentsEncoding, suppressMetadataAttachments }
+) => {
   const steps = Array.isArray(scenario.steps) ? scenario.steps : [];
   for (const step of steps) {
-    processStep(state, scenario.id, step, { attachmentsEncoding });
+    processStep(state, scenario.id, step, {
+      attachmentsEncoding,
+      suppressMetadataAttachments
+    });
   }
 };
 
-const processStep = (state, scenarioId, step, { attachmentsEncoding }) => {
+const processStep = (
+  state,
+  scenarioId,
+  step,
+  { attachmentsEncoding, suppressMetadataAttachments }
+) => {
   const {
     arguments: args,
     embeddings,
@@ -484,12 +522,16 @@ const processStep = (state, scenarioId, step, { attachmentsEncoding }) => {
 
   const durationValue = typeof duration === "string" ? Number(duration) : duration;
   const location = step?.match?.location ?? "";
-  const normalizedEmbeddings = normalizeEmbeddings(embeddings, { attachmentsEncoding });
+  const normalizedEmbeddings = normalizeEmbeddings(embeddings, {
+    attachmentsEncoding,
+    suppressMetadataAttachments
+  });
   const stepData = {
     args,
     duration: durationValue,
     embeddings: normalizedEmbeddings,
     error_message,
+    hidden,
     keyword,
     line,
     location,
@@ -506,14 +548,9 @@ const processStep = (state, scenarioId, step, { attachmentsEncoding }) => {
     state.steps.totalDurationNanoSec += durationValue;
   }
 
-  if (!hidden || (normalizedEmbeddings && normalizedEmbeddings.length)) {
-    if (status === "passed") {
-      state.scenarios.scenariosMap[scenarioId].passedSteps += 1;
-    } else if (status === "skipped") {
-      state.scenarios.scenariosMap[scenarioId].skippedSteps += 1;
-    }
-  }
-  if (status === "failed") {
-    state.scenarios.scenariosMap[scenarioId].failedSteps += 1;
-  }
+  applyStepToScenarioCounts(state.scenarios.scenariosMap[scenarioId], {
+    hidden,
+    keyword,
+    result: { status }
+  });
 };
