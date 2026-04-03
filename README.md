@@ -105,3 +105,4 @@ options.linkTags = linkTags;
 | 1.9.2 | Reporter version displayed in header next to title. Version is stamped into report settings at generation time. |
 | 1.9.3 | Fixed `npm publish` shipping stale React build. Added `prepublishOnly` hook to auto-rebuild `dist/` before publishing. Updated rollup to v4 and fixed config path. |
 | 1.9.4 | Improved Playwright-BDD compatibility: better decoding/rendering for vendor JSON and image attachments, metadata attachments hidden by default, useful hidden hook artifacts preserved, visible step counts no longer skewed by hidden hook noise, and feature/failure summary rendering now uses memoized selectors with cleaner URL sync. |
+| 1.10.0 | Added native `video/*` attachment rendering so Playwright-BDD and similar Cucumber outputs can show embedded failure videos directly in the HTML report. |
