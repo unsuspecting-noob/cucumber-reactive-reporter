@@ -12,7 +12,7 @@ const extensions = [".js", ".mjs"];
 export default [
   {
     input: "index.mjs",
-    external: ["ncp", "fs", "path", "util"],
+    external: ["fs", "path", "util"],
     output: [
       {
         file: pkg.main,

@@ -10,7 +10,6 @@
 
 import { createRequire } from "module";
 import fs from "fs";
-import ncp from "ncp";
 import path from "path";
 import readline from "node:readline";
 import ut from "util";
@@ -22,35 +21,15 @@ import { prepareStoreState } from "./src/parser/cucumberJsonAdapter.mjs";
 
 const require = createRequire(import.meta.url);
 
-ncp.limit = 16;
-
 const modulePath = require.resolve("./package.json"); //trick to resolve path to the installed module
 
-/**  
- options.filter - a RegExp instance, against which each file name is tested to determine whether to copy it or not, or a function taking single parameter: copied file name, returning true or false, determining whether to copy file or not.
-
- options.transform - a function: function (read, write) { read.pipe(write) } used to apply streaming transforms while copying.
-
- options.clobber - boolean=true. if set to false, ncp will not overwrite destination files that already exist.
-
- options.dereference - boolean=false. If set to true, ncp will follow symbolic links. For example, a symlink in the source tree pointing to a regular file will become a regular file in the destination tree. Broken symlinks will result in errors.
-
- options.stopOnErr - boolean=false. If set to true, ncp will behave like cp -r, and stop on the first error it encounters. By default, ncp continues copying, logging all errors and returning an array.
-
- options.errs - stream. If options.stopOnErr is false, a stream can be provided, and errors will be written to this stream.
-*/
-
-let cp = (source, destination, options) => {
-    options = options || {};
-    return new Promise((resolve, reject) => {
-        ncp(source, destination, options, (err) => {
-            if (err) {
-                reject(new Error(err));
-            }
-            resolve();
-        })
+const cp = async (source, destination, options = {}) => {
+    await fs.promises.cp(source, destination, {
+        recursive: true,
+        force: true,
+        ...options
     });
-}
+};
 
 const copyReportAssets = async (htmlPath, destination, cucumberJsonPath, settingsPath) => {
     // filter out any cucumber/settings json that may be bundled as sample data in the react template

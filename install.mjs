@@ -1,43 +1,19 @@
 import Fs from "fs/promises";
-import ncp from "ncp";
 import path from "path";
 
-ncp.limit = 16;
 const BUILD_D = "./react";
 const OUT_D = "./dist";
-const CURRENT_D = "./";
-const INCLUDE = ["package.json"]
-
-
-
-/**  
- options.filter - a RegExp instance, against which each file name is tested to determine whether to copy it or not, or a function taking single parameter: copied file name, returning true or false, determining whether to copy file or not.
-
- options.transform - a function: function (read, write) { read.pipe(write) } used to apply streaming transforms while copying.
-
- options.clobber - boolean=true. if set to false, ncp will not overwrite destination files that already exist.
-
- options.dereference - boolean=false. If set to true, ncp will follow symbolic links. For example, a symlink in the source tree pointing to a regular file will become a regular file in the destination tree. Broken symlinks will result in errors.
-
- options.stopOnErr - boolean=false. If set to true, ncp will behave like cp -r, and stop on the first error it encounters. By default, ncp continues copying, logging all errors and returning an array.
-
- options.errs - stream. If options.stopOnErr is false, a stream can be provided, and errors will be written to this stream.
-*/
 
 // files that should not be published - these are sample/test data used during development
 const EXCLUDE_FILES = ["cucumber-results.json", "_cucumber-results.json", "_reporter_settings.json"];
 
-let cp = (source, destination, options) => {
-    options = options || {};
-    return new Promise((resolve, reject) => {
-        ncp(source, destination, options, (err) => {
-            if (err) {
-                reject(new Error(err));
-            }
-            resolve();
-        })
+const cp = async (source, destination, options = {}) => {
+    await Fs.cp(source, destination, {
+        recursive: true,
+        force: true,
+        ...options
     });
-}
+};
 
 let copyBuild = async () => {
     let dest = path.join(OUT_D, "react");
@@ -55,13 +31,27 @@ let copyBuild = async () => {
     });
 }
 
-let copyIncluded = async () => {
-    for (let f of INCLUDE) {
-        await cp(path.join(CURRENT_D, f), path.join(OUT_D, f));
-    }
-}
+const createDistPackageJson = async () => {
+    const source = JSON.parse(await Fs.readFile("./package.json", "utf8"));
+    const distPackage = {
+        name: source.name,
+        version: source.version,
+        description: source.description,
+        private: source.private,
+        homepage: source.homepage,
+        main: "./cucumber-reactive-reporter.cjs.js",
+        module: "./cucumber-reactive-reporter.esm.js",
+        license: source.license,
+        repository: source.repository,
+        engines: source.engines
+    };
+    await Fs.writeFile(
+        path.join(OUT_D, "package.json"),
+        `${JSON.stringify(distPackage, null, 2)}\n`
+    );
+};
 
 let main = async function () {
     await copyBuild();
-    await copyIncluded();
+    await createDistPackageJson();
 }();
