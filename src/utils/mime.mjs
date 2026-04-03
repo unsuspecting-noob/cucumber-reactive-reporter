@@ -18,6 +18,9 @@ export const isXmlLikeMimeType = (value) => {
 export const isImageMimeType = (value) =>
   normalizeMimeType(value).startsWith("image/");
 
+export const isVideoMimeType = (value) =>
+  normalizeMimeType(value).startsWith("video/");
+
 export const shouldDecodeTextEmbedding = (value) => {
   const mimeType = normalizeMimeType(value);
   if (!mimeType) {

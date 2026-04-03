@@ -25,8 +25,8 @@ test("renders JSON-like vendor MIME types with the JSON viewer path", () => {
     />
   );
 
-  expect(screen.getByTestId("text-area-json")).toHaveTextContent(/"type":\s*"metadata"/);
-  expect(screen.getByTestId("text-area-json")).toHaveTextContent(/"story"/);
+  expect(screen.getByTestId("text-area-json").textContent).toMatch(/"type":\s*"metadata"/);
+  expect(screen.getByTestId("text-area-json").textContent).toMatch(/"story"/);
 });
 
 test("renders non-PNG images using their original MIME type", () => {
@@ -43,6 +43,27 @@ test("renders non-PNG images using their original MIME type", () => {
     />
   );
 
-  expect(screen.getByRole("img", { name: /image\/jpeg attachment/i }))
-    .toHaveAttribute("src", "data:image/jpeg;base64,ZmFrZS1pbWFnZS1ieXRlcw==");
+  expect(screen.getByRole("img", { name: /image\/jpeg attachment/i }).getAttribute("src"))
+    .toBe("data:image/jpeg;base64,ZmFrZS1pbWFnZS1ieXRlcw==");
+});
+
+test("renders video attachments with a native video player", () => {
+  const { container } = render(
+    <Embedding
+      content={[
+        {
+          mime_type: "video/webm",
+          data: "ZmFrZS12aWRlby1ieXRlcw=="
+        }
+      ]}
+      themeName="light"
+      sourceKey="webm-video"
+    />
+  );
+
+  const video = screen.getByLabelText(/video\/webm attachment/i);
+  expect(video.tagName).toBe("VIDEO");
+  expect(container.querySelector("source")).not.toBeNull();
+  expect(container.querySelector("source").getAttribute("src"))
+    .toBe("data:video/webm;base64,ZmFrZS12aWRlby1ieXRlcw==");
 });

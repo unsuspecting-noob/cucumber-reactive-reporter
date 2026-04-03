@@ -12,6 +12,7 @@ import { commonCellStyle } from './styles/commonStyles';
 import {
     isImageMimeType,
     isJsonLikeMimeType,
+    isVideoMimeType,
     isXmlLikeMimeType,
     normalizeMimeType
 } from "../utils/mime.mjs";
@@ -141,6 +142,27 @@ const Embedding = (props) => {
                                 objectFit: "scale-down"
                             }}
                         /> : ''}
+                    </TableCell>
+                </TableRow>
+            );
+        }
+
+        if (isVideoMimeType(mime)) {
+            return (
+                <TableRow key={key} hover>
+                    <TableCell align="center" style={{ ...commonCellStyle }}>
+                        {value ? <video
+                            controls
+                            preload="metadata"
+                            aria-label={`${mime} attachment`}
+                            style={{
+                                maxWidth: "100%",
+                                maxHeight: "480px"
+                            }}
+                        >
+                            <source src={`data:${mime};base64,${value}`} type={mime} />
+                            Your browser does not support embedded video playback.
+                        </video> : ''}
                     </TableCell>
                 </TableRow>
             );
