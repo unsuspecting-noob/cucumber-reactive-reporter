@@ -33,6 +33,19 @@ function syncDir(src, dest) {
   }
 }
 
+function copyIfNewer(src, dest) {
+  if (!existsSync(src)) {
+    return false;
+  }
+  const srcMtime = statSync(src).mtimeMs;
+  const destMtime = existsSync(dest) ? statSync(dest).mtimeMs : 0;
+  if (srcMtime > destMtime) {
+    copyFileSync(src, dest);
+    return true;
+  }
+  return false;
+}
+
 try {
   // 1. Clean build and react directories
   log("Cleaning build/ and react/...");
@@ -69,15 +82,18 @@ try {
   // 6. Copy sample data if source is newer
   const sampleSrc = path.join(PUBLIC, "_cucumber-results.json");
   const sampleDest = path.join(DOCS, "_cucumber-results.json");
-  if (existsSync(sampleSrc)) {
-    const srcMtime = statSync(sampleSrc).mtimeMs;
-    const destMtime = existsSync(sampleDest) ? statSync(sampleDest).mtimeMs : 0;
-    if (srcMtime > destMtime) {
-      log("Copying updated _cucumber-results.json to docs/...");
-      copyFileSync(sampleSrc, sampleDest);
-    } else {
-      log("_cucumber-results.json in docs/ is up to date.");
-    }
+  if (copyIfNewer(sampleSrc, sampleDest)) {
+    log("Copying updated _cucumber-results.json to docs/...");
+  } else {
+    log("_cucumber-results.json in docs/ is up to date.");
+  }
+
+  const settingsSrc = path.join(PUBLIC, "_reporter_settings.json");
+  const settingsDest = path.join(DOCS, "_reporter_settings.json");
+  if (copyIfNewer(settingsSrc, settingsDest)) {
+    log("Copying updated _reporter_settings.json to docs/...");
+  } else {
+    log("_reporter_settings.json in docs/ is up to date.");
   }
 
   log("Done! docs/ has been updated.");
