@@ -1,20 +1,20 @@
 import { Box, Card, CardActionArea, CardContent, CardHeader, Collapse, Stack, Tooltip, Typography } from "@mui/material";
-import { FeaturesToggleValuesEnum, getFeaturesToggleValue, getLiveActiveFeatureId, getSettings, liveFeatureActivated } from "../store/uistates";
+import { getLiveActiveFeatureId, getSettings, liveFeatureActivated } from "../store/uistates";
 import { cyan, green, orange, purple, red, yellow } from '@mui/material/colors';
 import {
-  getFeatureById,
-  getNumberOfFailedScenariosByFeatureId,
-  getNumberOfPassedScenariosByFeatureId,
-  getNumberOfSkippedScenariosByFeatureId
+  getFeatureById
 } from "../store/features";
-import { getAllScenariosForFeature } from "../store/scenarios";
 
 import LinkIcon from "@mui/icons-material/Link";
 import React from "react";
 import FeatureDescription from "./FeatureDescription";
 import ScenariosList from "./ScenariosList";
+import {
+  makeGetFeatureExecutionState,
+  makeGetFeatureStatusCounts
+} from "../store/reportSelectors.mjs";
 import { styled } from '@mui/material/styles';
-import { useDispatch, useSelector } from "react-redux";
+import { shallowEqual, useDispatch, useSelector } from "react-redux";
 
 export const commonBoxStyles = {
   borderRadius: "3px",
@@ -50,15 +50,17 @@ const StatusPill = ({ count, color }) => {
   );
 };
 
-const resolveScenarioExecutionState = (steps) => {
-  const list = Array.isArray(steps) ? steps : [];
-  const hasAnyStatus = list.some((step) => step && step.status);
-  if (!hasAnyStatus) {
-    return "pending";
-  }
-  const hasMissingStatus = list.some((step) => !step || !step.status);
-  return hasMissingStatus ? "running" : "complete";
-};
+const FeatureCard = styled(Card)(({ theme }) => ({
+  ...theme.typography.body2,
+  textAlign: 'center',
+  color: theme.palette.text.secondary,
+  minWidth: "100%",
+  border: "1px solid",
+  borderColor: theme.palette.divider,
+  borderRadius: 8,
+  overflow: "hidden",
+  transition: "box-shadow 0.15s ease, border-color 0.15s ease"
+}));
 
 const FeatureContainer = (props) => {
   const dispatch = useDispatch();
@@ -67,14 +69,16 @@ const FeatureContainer = (props) => {
     id,
     name,
     tags,
-    uri,
-    themeName
+    uri
   } = useSelector((state) => getFeatureById(state, props));
+  const themeName = props.themeName;
   const [expanded, setExpanded] = React.useState(false);
   const selectionMode = Boolean(props.selectionMode);
   const isSelected = Boolean(props.isSelected);
   const effectiveExpanded = selectionMode ? isSelected : expanded;
   const onSelectFeature = props.onSelectFeature;
+  const selectExecutionState = React.useMemo(makeGetFeatureExecutionState, []);
+  const selectStatusCounts = React.useMemo(makeGetFeatureStatusCounts, []);
 
   const handleExpandClick = () => {
     if (selectionMode) {
@@ -86,28 +90,19 @@ const FeatureContainer = (props) => {
     setExpanded(!expanded);
   };
 
-  const st = useSelector((state) => getFeaturesToggleValue(state, props));
   const settings = useSelector((state) => getSettings(state, props));
-  const scenarios = useSelector((state) => getAllScenariosForFeature(state, props));
-  const stepsMap = useSelector((state) => state.steps.stepsMap);
   const isLive = Boolean(settings?.live?.enabled);
   const liveActiveFeatureId = useSelector((state) => getLiveActiveFeatureId(state));
-
-  let failedScenariosArr = useSelector((state) =>
-    getNumberOfFailedScenariosByFeatureId(state, props));
-  let passedScenariosArr = useSelector((state) =>
-    getNumberOfPassedScenariosByFeatureId(state, props));
-  let skippedScenariosArr = useSelector((state) =>
-    getNumberOfSkippedScenariosByFeatureId(state, props));
-  let passedScenarios = passedScenariosArr.length;
-  let failedScenarios = failedScenariosArr.length;
-  let skippedScenarios = skippedScenariosArr.length;
-  const scenarioStates = scenarios.map((scenario) =>
-    resolveScenarioExecutionState(stepsMap[scenario.id]?.steps)
-  );
-  const featureIsRunning = scenarioStates.some((state) => state === "running");
-  const featureIsPending = scenarioStates.length > 0 && scenarioStates.every((state) => state === "pending");
-  const featureIsActive = isLive && (featureIsRunning || liveActiveFeatureId === id);
+  const {
+    featureIsActive,
+    featureIsPending,
+    featureIsRunning
+  } = useSelector((state) => selectExecutionState(state, { id }), shallowEqual);
+  let {
+    failedScenarios,
+    passedScenarios,
+    skippedScenarios
+  } = useSelector((state) => selectStatusCounts(state, { id }), shallowEqual);
 
   React.useEffect(() => {
     if (!isLive || !featureIsRunning) {
@@ -118,37 +113,6 @@ const FeatureContainer = (props) => {
     }
     dispatch(liveFeatureActivated({ id }));
   }, [dispatch, featureIsRunning, id, isLive, liveActiveFeatureId]);
-
-  switch (st) {
-    case FeaturesToggleValuesEnum.ALL:
-      break;
-    case FeaturesToggleValuesEnum.PASSED:
-      failedScenarios = 0;
-      skippedScenarios = 0;
-      break;
-    case FeaturesToggleValuesEnum.FAILED:
-      passedScenarios = 0;
-      skippedScenarios = 0;
-      break;
-    case FeaturesToggleValuesEnum.SKIPPED:
-      failedScenarios = 0;
-      passedScenarios = 0;
-      break;
-    default:
-      break
-  }
-
-  const Item = styled(Card)(({ theme }) => ({
-    ...theme.typography.body2,
-    textAlign: 'center',
-    color: theme.palette.text.secondary,
-    minWidth: "100%",
-    border: "1px solid",
-    borderColor: theme.palette.divider,
-    borderRadius: 8,
-    overflow: "hidden",
-    transition: "box-shadow 0.15s ease, border-color 0.15s ease"
-  }));
 
   const selectedAccent = selectionMode && isSelected && !featureIsActive;
   const activeAccent = featureIsActive;
@@ -189,31 +153,35 @@ const FeatureContainer = (props) => {
     }
   };
 
-  //deal with purple tags in subheader, convert jira like ones to links
-  let tagArr = tags.map((t) => t.name);
-  let taglinks = [];
-  tags.forEach(element => {
-    let e = {};
-    e.name = element.name;
-    e.line = element.line;
-    taglinks.push(e);
-  });
-  if (settings.linkTags && settings.linkTags.length) {
-    for (let rule of settings.linkTags) {
-      let re = new RegExp(rule.pattern);
-      if (taglinks.length) {
-        for (let i in taglinks) {
-          let matchedIndex = taglinks[i].name.search(re);
-          if (matchedIndex !== -1) {
-            taglinks[i].link = `${rule.link}${taglinks[i].name.substring(matchedIndex)}`;
-          }
+  const tagArr = React.useMemo(() => tags.map((tag) => tag.name), [tags]);
+  const taglinks = React.useMemo(() => {
+    const links = tags.map((tag) => ({
+      line: tag.line,
+      name: tag.name
+    }));
+    const rules = Array.isArray(settings.linkTags) ? settings.linkTags : [];
+    if (!rules.length) {
+      return links;
+    }
+    const compiledRules = rules.map((rule) => ({
+      link: rule.link,
+      re: new RegExp(rule.pattern)
+    }));
+    return links.map((tag) => {
+      for (const rule of compiledRules) {
+        const matchedIndex = tag.name.search(rule.re);
+        if (matchedIndex !== -1) {
+          return {
+            ...tag,
+            link: `${rule.link}${tag.name.substring(matchedIndex)}`
+          };
         }
       }
-    }
-  }
-  let tagkey = 0;
+      return tag;
+    });
+  }, [settings.linkTags, tags]);
   return (
-    <Item
+    <FeatureCard
       raised={false}
       elevation={selectedAccent ? 3 : 1}
       className={featureIsPending ? "live-pending" : ""}
@@ -313,8 +281,8 @@ const FeatureContainer = (props) => {
                   <Stack direction="row" spacing={0.75} flexWrap="wrap">
                     {taglinks.map((tag) => (
                       tag.link
-                        ? <a href={tag.link} key={tagkey++} style={{ color: "inherit" }}>{tag.name}</a>
-                        : <span key={tagkey++}>{tag.name}</span>
+                        ? <a href={tag.link} key={tag.name} style={{ color: "inherit" }}>{tag.name}</a>
+                        : <span key={tag.name}>{tag.name}</span>
                     ))}
                   </Stack>
                 </Typography>
@@ -350,7 +318,7 @@ const FeatureContainer = (props) => {
           </Stack>
         </CardContent>
       </Collapse>
-    </Item>
+    </FeatureCard>
   );
 };
 

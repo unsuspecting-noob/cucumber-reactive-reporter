@@ -10,80 +10,71 @@ import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
 import { render, screen } from "@testing-library/react";
 import FeaturesList from "./FeaturesList";
-import featuresReducer from "../store/features";
-import scenariosReducer from "../store/scenarios";
-import stateReducer from "../store/uistates";
-import stepsReducer from "../store/steps";
+import { INITIAL_UI_STATE } from "../store/uistates";
 
 jest.mock("@mui/material/useMediaQuery", () => jest.fn(() => true));
-jest.mock("./ScenarioStepsPanel", () => () => <div>Scenario panel</div>);
+jest.mock("./ScenarioStepsPanel", () => () => (
+  <section role="region" aria-label="Scenario details panel">
+    <div role="separator" aria-label="Resize panes" />
+  </section>
+));
 
 const buildStore = () => {
-  const initialFeaturesState = {
-    featuresMap: {
-      "feature-1": {
-        id: "feature-1",
-        description: "Sample feature description",
-        uri: "features/sample.feature",
-        keyword: "Feature",
-        line: 1,
-        name: "Feature 1",
-        tags: [],
-        allTags: [],
-        numFailedScenarios: 0,
-        numSkippedScenarios: 0
+  const preloadedState = {
+    features: {
+      featuresMap: {
+        "feature-1": {
+          id: "feature-1",
+          description: "Sample feature description",
+          uri: "features/sample.feature",
+          keyword: "Feature",
+          line: 1,
+          name: "Feature 1",
+          tags: [],
+          allTags: [],
+          numFailedScenarios: 0,
+          numSkippedScenarios: 0
+        }
+      },
+      list: ["feature-1"]
+    },
+    scenarios: {
+      scenariosMap: {
+        "feature-1;scenario-1": {
+          id: "feature-1;scenario-1",
+          featureId: "feature-1",
+          name: "Scenario 1",
+          keyword: "Scenario",
+          line: 10,
+          passedSteps: 1,
+          skippedSteps: 0,
+          failedSteps: 0,
+          tags: [],
+          type: "scenario",
+          uri: "features/sample.feature"
+        }
+      },
+      list: ["feature-1;scenario-1"]
+    },
+    states: {
+      ...INITIAL_UI_STATE,
+      featuresList: {
+        ...INITIAL_UI_STATE.featuresList,
+        selectedFeatureId: "feature-1",
+        selectedScenarioId: "feature-1;scenario-1"
       }
     },
-    list: ["feature-1"]
-  };
-  const initialScenariosState = {
-    scenariosMap: {
-      "feature-1;scenario-1": {
-        id: "feature-1;scenario-1",
-        featureId: "feature-1",
-        name: "Scenario 1",
-        keyword: "Scenario",
-        line: 10,
-        passedSteps: 1,
-        skippedSteps: 0,
-        failedSteps: 0,
-        tags: [],
-        type: "scenario",
-        uri: "features/sample.feature"
-      }
-    },
-    list: ["feature-1;scenario-1"]
-  };
-  const initialStepsState = {
-    stepsMap: {
-      "feature-1;scenario-1": {
-        steps: []
-      }
-    },
-    totalDurationNanoSec: 0
-  };
-  const baseUiState = stateReducer(undefined, { type: "@@INIT" });
-  const preloadedStates = {
-    ...baseUiState,
-    featuresList: {
-      ...baseUiState.featuresList,
-      selectedFeatureId: "feature-1",
-      selectedScenarioId: "feature-1;scenario-1"
+    steps: {
+      stepsMap: {
+        "feature-1;scenario-1": {
+          steps: []
+        },
+      },
+      totalDurationNanoSec: 0
     }
   };
-
   return configureStore({
-    reducer: {
-      features: featuresReducer(initialFeaturesState),
-      scenarios: scenariosReducer,
-      states: stateReducer,
-      steps: stepsReducer
-    },
-    preloadedState: {
-      scenarios: initialScenariosState,
-      states: preloadedStates,
-      steps: initialStepsState
-    }
+    reducer: (state = preloadedState) => state
   });
 };
 

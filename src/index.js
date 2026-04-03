@@ -26,8 +26,8 @@ let store;
 
 //Configure url params for "filter" to autosync to the store
 const buildQuerySyncParams = (state) => {
-  const selectedFeatureId = getSelectedFeatureId(state) ?? "";
-  const selectedScenarioId = getSelectedScenarioId(state) ?? "";
+  const selectedFeatureId = getSelectedFeatureId(state);
+  const selectedScenarioId = getSelectedScenarioId(state);
   return {
     filter: {
       action: value => ({
@@ -65,7 +65,7 @@ const buildQuerySyncParams = (state) => {
       defaultValue: selectedFeatureId,
       selector: getSelectedFeatureId,
       stringToValue: string => string || null,
-      valueToString: value => value || ""
+      valueToString: value => value ?? ""
     },
     scenario: {
       action: value => ({
@@ -77,7 +77,7 @@ const buildQuerySyncParams = (state) => {
       defaultValue: selectedScenarioId,
       selector: getSelectedScenarioId,
       stringToValue: string => string || null,
-      valueToString: value => value || ""
+      valueToString: value => value ?? ""
     }
   };
 };

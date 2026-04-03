@@ -1,28 +1,17 @@
-import { Box, Chip, Collapse, Divider, IconButton, Stack, Typography } from "@mui/material";
-import { red, orange, purple } from "@mui/material/colors";
+import { Box, Chip, Collapse, IconButton, Stack, Typography } from "@mui/material";
+import { red, purple } from "@mui/material/colors";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import React from "react";
 import { useSelector } from "react-redux";
-import { getAllFeatures } from "../store/features";
+import { makeGetFailureSummarySections } from "../store/reportSelectors.mjs";
 import { getTheme } from "../store/uistates";
 
 const FailureSummaryPanel = ({ onScenarioClick }) => {
     const themeName = useSelector((state) => getTheme(state));
-    const features = useSelector((state) => getAllFeatures(state));
-    const scenariosMap = useSelector((state) => state.scenarios.scenariosMap);
-    const stepsMap = useSelector((state) => state.steps.stepsMap);
+    const selectFailureSummary = React.useMemo(makeGetFailureSummarySections, []);
+    const failedFeatures = useSelector((state) => selectFailureSummary(state));
     const [expandedScenarios, setExpandedScenarios] = React.useState({});
-
-    const failedFeatures = [];
-    for (const feature of features) {
-        const failedScenarios = Object.values(scenariosMap).filter(
-            (sc) => sc.id.startsWith(feature.id) && sc.failedSteps > 0
-        );
-        if (failedScenarios.length > 0) {
-            failedFeatures.push({ feature, scenarios: failedScenarios });
-        }
-    }
 
     if (failedFeatures.length === 0) {
         return (
@@ -36,17 +25,6 @@ const FailureSummaryPanel = ({ onScenarioClick }) => {
 
     const toggleScenario = (scenarioId) => {
         setExpandedScenarios((prev) => ({ ...prev, [scenarioId]: !prev[scenarioId] }));
-    };
-
-    const getFirstError = (scenarioId) => {
-        const stepData = stepsMap[scenarioId];
-        if (!stepData?.steps) return null;
-        for (const step of stepData.steps) {
-            if (step.status === "failed" && step.error_message) {
-                return { step, error: step.error_message };
-            }
-        }
-        return null;
     };
 
     const truncate = (str, len) => {
@@ -73,12 +51,11 @@ const FailureSummaryPanel = ({ onScenarioClick }) => {
                             {feature.name}
                         </Typography>
                         <Stack direction="column" spacing={0.5} sx={{ mt: 0.5 }}>
-                            {scenarios.map((sc) => {
-                                const errorInfo = getFirstError(sc.id);
-                                const isExpanded = Boolean(expandedScenarios[sc.id]);
+                            {scenarios.map(({ scenario, errorInfo }) => {
+                                const isExpanded = Boolean(expandedScenarios[scenario.id]);
                                 return (
                                     <Box
-                                        key={sc.id}
+                                        key={scenario.id}
                                         sx={{
                                             borderRadius: 1,
                                             border: "1px solid",
@@ -104,12 +81,12 @@ const FailureSummaryPanel = ({ onScenarioClick }) => {
                                             }}
                                             onClick={() => {
                                                 if (typeof onScenarioClick === "function") {
-                                                    onScenarioClick(feature.id, sc.id);
+                                                    onScenarioClick(feature.id, scenario.id);
                                                 }
                                             }}
                                         >
                                             <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                {sc.tags?.length > 0 && (
+                                                {scenario.tags?.length > 0 && (
                                                     <Typography
                                                         component="div"
                                                         sx={{
@@ -120,7 +97,7 @@ const FailureSummaryPanel = ({ onScenarioClick }) => {
                                                             mb: 0.25
                                                         }}
                                                     >
-                                                        {sc.tags.map((t) => t.name).join(" ")}
+                                                        {scenario.tags.map((t) => t.name).join(" ")}
                                                     </Typography>
                                                 )}
                                                 <Typography
@@ -131,7 +108,7 @@ const FailureSummaryPanel = ({ onScenarioClick }) => {
                                                         lineHeight: 1.3
                                                     }}
                                                 >
-                                                    {sc.name}
+                                                    {scenario.name}
                                                 </Typography>
                                                 {errorInfo && !isExpanded ? (
                                                     <Typography
@@ -153,7 +130,7 @@ const FailureSummaryPanel = ({ onScenarioClick }) => {
                                             </Box>
                                             <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
                                                 <Chip
-                                                    label={`${sc.failedSteps} failed`}
+                                                    label={`${scenario.failedSteps} failed`}
                                                     size="small"
                                                     sx={{
                                                         height: 20,
@@ -168,7 +145,7 @@ const FailureSummaryPanel = ({ onScenarioClick }) => {
                                                         size="small"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            toggleScenario(sc.id);
+                                                            toggleScenario(scenario.id);
                                                         }}
                                                         sx={{ p: 0.25 }}
                                                     >

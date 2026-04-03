@@ -33,37 +33,6 @@ export default async function () {
     const liveOptions = metadata?.live ?? {};
     return liveOptions.source ?? (metadata?.inputFormat === "message" ? "message" : "state");
   };
-  const applyUrlSelection = (uiState) => {
-    if (typeof window === "undefined" || !window.location) {
-      return uiState;
-    }
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const hasFeatureParam = params.has("feature");
-      const hasScenarioParam = params.has("scenario");
-      if (!hasFeatureParam && !hasScenarioParam) {
-        return uiState;
-      }
-      const featureFromUrl = params.get("feature");
-      const scenarioFromUrl = params.get("scenario");
-      const selectedFeatureId = hasFeatureParam ? (featureFromUrl || null) : (uiState.featuresList?.selectedFeatureId ?? null);
-      let selectedScenarioId = hasScenarioParam ? (scenarioFromUrl || null) : (uiState.featuresList?.selectedScenarioId ?? null);
-      if (!selectedFeatureId) {
-        selectedScenarioId = null;
-      }
-      return {
-        ...uiState,
-        featuresList: {
-          ...(uiState.featuresList ?? {}),
-          selectedFeatureId,
-          selectedScenarioId
-        }
-      };
-    } catch (error) {
-      console.log("Unable to read selection from URL:", error);
-      return uiState;
-    }
-  };
 
   try {
     let settingsResponse = await fetch("./_reporter_settings.json", { cache: "no-store" });
@@ -95,7 +64,7 @@ export default async function () {
   );
   const storePreloadedState = {
     ...preloadedState,
-    states: applyUrlSelection(hydratedUiState)
+    states: hydratedUiState
   };
 
   let appReducer = combineReducers({
