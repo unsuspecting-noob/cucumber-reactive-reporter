@@ -75,22 +75,71 @@ const resolveScenarioExecutionState = (steps) => {
   return hasMissingStatus ? "running" : "complete";
 };
 
-const filterScenariosBySearch = (scenarios, searchString) => {
+const parseSearchExpression = (searchString) => {
   if (!searchString) {
-    return scenarios;
+    return null;
   }
   try {
-    const expr = parseTags(searchString);
-    return scenarios.filter((scenario) => {
-      const tags = Array.isArray(scenario?.tags)
-        ? scenario.tags.map((tag) => tag?.name).filter(Boolean)
-        : [];
-      return expr.evaluate(tags) === true;
-    });
+    return parseTags(searchString);
   } catch (_error) {
-    return scenarios;
+    return null;
   }
 };
+
+const scenarioMatchesSearch = (scenario, expr) => {
+  const tags = Array.isArray(scenario?.tags)
+    ? scenario.tags.map((tag) => tag?.name).filter(Boolean)
+    : [];
+  return expr.evaluate(tags) === true;
+};
+
+const filterScenariosBySearch = (scenarios, searchString) => {
+  const expr = parseSearchExpression(searchString);
+  if (!expr) {
+    return scenarios;
+  }
+  return scenarios.filter((scenario) => scenarioMatchesSearch(scenario, expr));
+};
+
+const getScenarioViewFilter = (featureView) => {
+  switch (featureView) {
+    case TOGGLE_VALUES.PASSED:
+      return scenarioIsPassed;
+    case TOGGLE_VALUES.FAILED:
+      return scenarioHasFailures;
+    case TOGGLE_VALUES.SKIPPED:
+      return scenarioIsSkipped;
+    default:
+      return null;
+  }
+};
+
+// A feature is listed when at least one of its scenarios passes both the status toggle and the
+// tag search, the same two filters the scenario list applies inside the feature.
+export const getVisibleFeatures = createSelector(
+  [getFeatureIds, getFeaturesMap, getScenarioIds, getScenariosMap, getSelectedFeatureView, getSearchValue],
+  (featureIds, featuresMap, scenarioIds, scenariosMap, featureView, searchValue) => {
+    const features = featureIds.map((featureId) => featuresMap[featureId]).filter(Boolean);
+    const viewFilter = getScenarioViewFilter(featureView);
+    const searchExpr = parseSearchExpression(searchValue);
+    if (!viewFilter && !searchExpr) {
+      return features;
+    }
+
+    const visibleFeatureIds = new Set();
+    for (const scenarioId of scenarioIds) {
+      const scenario = scenariosMap[scenarioId];
+      if (
+        scenario
+        && (!viewFilter || viewFilter(scenario))
+        && (!searchExpr || scenarioMatchesSearch(scenario, searchExpr))
+      ) {
+        visibleFeatureIds.add(scenario.featureId);
+      }
+    }
+    return features.filter((feature) => visibleFeatureIds.has(feature.id));
+  }
+);
 
 export const makeGetFeatureExecutionState = () => createSelector(
   [getScenariosForFeature, getStepsMap, getSettings, getLiveActiveFeatureId, getFeatureId],

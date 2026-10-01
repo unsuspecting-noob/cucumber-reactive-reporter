@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getVisibleFeatures,
   makeGetFailureSummarySections,
   makeGetFeatureExecutionState,
   makeGetFeatureStatusCounts
@@ -155,4 +156,124 @@ test("failure summary selector groups failed scenarios by feature order and capt
   assert.equal(summary[0].scenarios[0].scenario.id, "scenario-3");
   assert.equal(summary[0].scenarios[0].errorInfo.error, "first failure");
   assert.equal(summary[0].scenarios[0].errorInfo.step.name, "it breaks");
+});
+
+const buildScenario = (id, featureId, counts, tags) => ({
+  id,
+  featureId,
+  name: id,
+  passedSteps: 0,
+  skippedSteps: 0,
+  failedSteps: 0,
+  ...counts,
+  tags: tags.map((name) => ({ name }))
+});
+
+// feature-mixed has 1 passed, 3 skipped and 1 failed scenario: with 4 features in the report the old
+// count-based Passed filter (features.length - failed - skipped) hid it, while listing the
+// skipped-only and failed-only features instead.
+const buildFilterState = () => {
+  const scenarios = [
+    buildScenario("mixed-passed", "feature-mixed", { passedSteps: 2 }, ["@smoke"]),
+    buildScenario("mixed-skipped-1", "feature-mixed", { skippedSteps: 2 }, ["@skipped"]),
+    buildScenario("mixed-skipped-2", "feature-mixed", { skippedSteps: 2 }, ["@skipped"]),
+    buildScenario("mixed-skipped-3", "feature-mixed", { skippedSteps: 2 }, ["@skipped"]),
+    buildScenario("mixed-failed", "feature-mixed", { passedSteps: 1, failedSteps: 1 }, ["@regression"]),
+    buildScenario("skipped-only", "feature-skipped", { skippedSteps: 3 }, ["@skipped"]),
+    buildScenario("failed-only", "feature-failed", { failedSteps: 1 }, ["@regression"])
+  ];
+  const featureIds = ["feature-mixed", "feature-skipped", "feature-failed", "feature-empty"];
+  return {
+    features: {
+      list: featureIds,
+      featuresMap: Object.fromEntries(featureIds.map((id) => [id, { id, name: id }]))
+    },
+    scenarios: {
+      list: scenarios.map((scenario) => scenario.id),
+      scenariosMap: Object.fromEntries(scenarios.map((scenario) => [scenario.id, scenario]))
+    },
+    steps: {
+      stepsMap: {}
+    },
+    states: {
+      featuresList: {
+        featuresButtonToggleValue: "All",
+        lastEnteredSearchValue: ""
+      }
+    }
+  };
+};
+
+// selectors memoize on the state reference, so every view gets a new state object like a reducer would
+const withFeatureView = (state, featureView, searchValue = "") => ({
+  ...state,
+  states: {
+    ...state.states,
+    featuresList: {
+      ...state.states.featuresList,
+      featuresButtonToggleValue: featureView,
+      lastEnteredSearchValue: searchValue
+    }
+  }
+});
+
+const getVisibleFeatureIds = (state, featureView, searchValue) =>
+  getVisibleFeatures(withFeatureView(state, featureView, searchValue)).map((feature) => feature.id);
+
+test("visible features keep only features with at least one scenario in the selected status", () => {
+  const state = buildFilterState();
+
+  assert.deepEqual(getVisibleFeatureIds(state, "Passed"), ["feature-mixed"]);
+  assert.deepEqual(getVisibleFeatureIds(state, "Failed"), ["feature-mixed", "feature-failed"]);
+  assert.deepEqual(getVisibleFeatureIds(state, "Skipped"), ["feature-mixed", "feature-skipped"]);
+  assert.deepEqual(
+    getVisibleFeatureIds(state, "All"),
+    ["feature-mixed", "feature-skipped", "feature-failed", "feature-empty"]
+  );
+  // unrelated state changes keep the same list instance, so the feature list does not re-render
+  assert.equal(
+    getVisibleFeatures(withFeatureView(state, "Passed")),
+    getVisibleFeatures(withFeatureView(state, "Passed"))
+  );
+});
+
+test("visible features apply the tag search per scenario together with the status filter", () => {
+  const state = buildFilterState();
+
+  // one @skipped scenario no longer hides the rest of its feature
+  assert.deepEqual(getVisibleFeatureIds(state, "All", "not @skipped"), ["feature-mixed", "feature-failed"]);
+  assert.deepEqual(getVisibleFeatureIds(state, "Passed", "not @skipped"), ["feature-mixed"]);
+  assert.deepEqual(getVisibleFeatureIds(state, "Passed", "@regression"), []);
+  // tags spread across different scenarios do not add up to a feature-level match
+  assert.deepEqual(getVisibleFeatureIds(state, "All", "@smoke and @regression"), []);
+  // an unparsable search is ignored, same as in the scenario list
+  assert.deepEqual(
+    getVisibleFeatureIds(state, "All", "@smoke and ("),
+    ["feature-mixed", "feature-skipped", "feature-failed", "feature-empty"]
+  );
+});
+
+test("every listed feature shows a non-zero count for the selected status", () => {
+  const state = buildFilterState();
+  const countsSelector = makeGetFeatureStatusCounts();
+  const countKeyByView = {
+    Passed: "passedScenarios",
+    Failed: "failedScenarios",
+    Skipped: "skippedScenarios"
+  };
+
+  for (const [featureView, countKey] of Object.entries(countKeyByView)) {
+    for (const searchValue of ["", "not @skipped", "@smoke", "@regression"]) {
+      const viewState = withFeatureView(state, featureView, searchValue);
+      const visibleIds = getVisibleFeatures(viewState).map((feature) => feature.id);
+      for (const featureId of state.features.list) {
+        const count = countsSelector(viewState, { id: featureId })[countKey];
+        assert.equal(
+          visibleIds.includes(featureId),
+          count > 0,
+          `${featureView} + "${searchValue}": ${featureId} has ${countKey}=${count}`
+        );
+      }
+    }
+  }
 });

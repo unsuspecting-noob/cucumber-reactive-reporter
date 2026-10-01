@@ -30,12 +30,30 @@ const buildStore = (tags = []) => {
     },
     list: ["feature-1"]
   };
+  // the feature list only shows features with a scenario matching the search, so the tags live on a scenario too
+  const initialScenariosState = {
+    scenariosMap: {
+      "feature-1;scenario-1": {
+        id: "feature-1;scenario-1",
+        featureId: "feature-1",
+        name: "Scenario 1",
+        passedSteps: 1,
+        skippedSteps: 0,
+        failedSteps: 0,
+        tags: tagObjects
+      }
+    },
+    list: ["feature-1;scenario-1"]
+  };
   return configureStore({
     reducer: {
       features: featuresReducer(initialFeaturesState),
       scenarios: scenariosReducer,
       states: stateReducer,
       steps: stepsReducer
+    },
+    preloadedState: {
+      scenarios: initialScenariosState
     }
   });
 };

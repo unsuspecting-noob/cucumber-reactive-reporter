@@ -2,7 +2,6 @@ import '../overwriteStyles.css'
 
 import { Box, Grid, Stack } from "@mui/material";
 import {
-  FeaturesToggleValuesEnum,
   featureSelected,
   getFeaturesToggleValue,
   getLastEnteredSearchValue,
@@ -15,16 +14,7 @@ import {
   setSplitPaneRatio,
   selectionCleared
 } from "../store/uistates";
-import {
-  getAllFailedFeatures,
-  getAllFeatures,
-  getAllMatchingFeatureIds,
-  getAllPassedFeatures,
-  getAllSkippedFeatures,
-  getFailedMatchingFeatureIds,
-  getPassedMatchingFeatureIds,
-  getSkippedMatchingFeatureIds
-} from "../store/features";
+import { getVisibleFeatures } from "../store/reportSelectors.mjs";
 import { useDispatch, useSelector } from "react-redux";
 
 import FeatureContainer from "./FeatureContainer";
@@ -37,17 +27,9 @@ const FEATURES_PER_PAGE = [50, 100, 30, 10];
 
 const FeaturesList = () => {
   const dispatch = useDispatch();
-  let features;
   let displayFeaturesToggleState = useSelector((state) => getFeaturesToggleValue(state));
   let filterVal = useSelector((state) => getLastEnteredSearchValue(state));
-  let allFeatures = useSelector((state) => getAllFeatures(state));
-  let failedFeatures = useSelector((state) => getAllFailedFeatures(state));
-  let passedFeatures = useSelector((state) => getAllPassedFeatures(state));
-  let skippedFeatures = useSelector((state) => getAllSkippedFeatures(state));
-  let matchedFeatures_ALL = useSelector((state) => getAllMatchingFeatureIds(state));
-  let matchedFeatures_PASSED = useSelector((state) => getPassedMatchingFeatureIds(state));
-  let matchedFeatures_FAILED = useSelector((state) => getFailedMatchingFeatureIds(state));
-  let matchedFeatures_SKIPPED = useSelector((state) => getSkippedMatchingFeatureIds(state));
+  const features = useSelector(getVisibleFeatures);
   let themeName = useSelector((state) => getTheme(state));
   const selectedFeatureId = useSelector((state) => getSelectedFeatureId(state));
   const selectedScenarioId = useSelector((state) => getSelectedScenarioId(state));
@@ -62,23 +44,6 @@ const FeaturesList = () => {
   const moveHandlerRef = React.useRef(null);
   const upHandlerRef = React.useRef(null);
   const resizeHandleWidth = 8;
-
-  switch (displayFeaturesToggleState) {
-    case FeaturesToggleValuesEnum.ALL:
-      filterVal ? features = matchedFeatures_ALL : features = allFeatures
-      break;
-    case FeaturesToggleValuesEnum.FAILED:
-      filterVal ? features = matchedFeatures_FAILED : features = failedFeatures
-      break;
-    case FeaturesToggleValuesEnum.PASSED:
-      filterVal ? features = matchedFeatures_PASSED : features = passedFeatures
-      break;
-    case FeaturesToggleValuesEnum.SKIPPED:
-      filterVal ? features = matchedFeatures_SKIPPED : features = skippedFeatures
-      break;
-    default:
-      break;
-  }
 
   const fakeprops = {
     id: "feature_paginator"

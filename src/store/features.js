@@ -81,35 +81,6 @@ export const getFeatureById = (state, { id }) => {
   return state.features.featuresMap[id];
 };
 
-export const getAllFeatures = createSelector(
-  (state) => state.features.list,
-  (state) => state.features.featuresMap,
-  (list, features) => list.map((id) => features[id]).filter(Boolean)
-);
-
-
-export const getAllFailedFeatures = createSelector(
-  getAllFeatures,
-  (features) => features.filter((f) => f.numFailedScenarios > 0)
-);
-
-export const getAllPassedFeatures = createSelector(
-  getAllFeatures,
-  (features) => {
-    //there is no numPassedScenarios, need to calc
-    const sc = features;
-    return sc.filter((f) => {
-      const p = sc.length - f.numFailedScenarios - f.numSkippedScenarios;
-      return (p > 0);
-    });
-  }
-);
-
-export const getAllSkippedFeatures = createSelector(
-  getAllFeatures,
-  (features) => features.filter((f) => f.numSkippedScenarios > 0)
-);
-
 export const getTotalNumberOfFailedScenarios = createSelector(
   (state) => state,
   (state) => {
@@ -223,31 +194,6 @@ const _filterScenarios = (searchString, scenarios) => {
   return retVal;
 }
 
-const _filterFeatures = (searchString, allFeatures) => {
-  let retVal;
-  let expr;
-  try {
-    expr = parseTags(searchString);
-  } catch (e) {
-    console.log(e);
-  }
-  if (expr) {
-    retVal = allFeatures.filter(
-      (f) => {
-        let tags = f.allTags.map((t) => t.name);
-        if (expr.evaluate(tags) === true) {
-          return true;
-        }
-        return false;
-      }
-    );
-  } else retVal = allFeatures;
-  return retVal;
-}
-export const getAllMatchingFeatureIds = createSelector([getLastEnteredSearchValue, getAllFeatures], _filterFeatures);
-export const getFailedMatchingFeatureIds = createSelector([getLastEnteredSearchValue, getAllFailedFeatures], _filterFeatures);
-export const getPassedMatchingFeatureIds = createSelector([getLastEnteredSearchValue, getAllPassedFeatures], _filterFeatures);
-export const getSkippedMatchingFeatureIds = createSelector([getLastEnteredSearchValue, getAllSkippedFeatures], _filterFeatures);
 export const getNumberOfFailedScenariosByFeatureId = createSelector([getLastEnteredSearchValue, getFailedScenariosByFeatureId], _filterScenarios);
 export const getNumberOfPassedScenariosByFeatureId = createSelector([getLastEnteredSearchValue, getPassedScenariosByFeatureId], _filterScenarios);
 export const getNumberOfSkippedScenariosByFeatureId = createSelector([getLastEnteredSearchValue, getSkippedScenariosByFeatureId], _filterScenarios);

@@ -19,18 +19,11 @@ import {
     toggleTheme
 } from "../store/uistates";
 import {
-    getAllFailedFeatures,
-    getAllFeatures,
-    getAllMatchingFeatureIds,
-    getAllPassedFeatures,
-    getAllSkippedFeatures,
-    getFailedMatchingFeatureIds,
-    getPassedMatchingFeatureIds,
-    getSkippedMatchingFeatureIds,
     getTotalNumberOfFailedScenarios,
     getTotalNumberOfPassedScenarios,
     getTotalNumberOfSkippedScenarios
 } from "../store/features";
+import { getVisibleFeatures } from "../store/reportSelectors.mjs";
 import { useDispatch, useSelector } from "react-redux";
 
 import AlternateEmailIcon from "@mui/icons-material/AlternateEmail";
@@ -63,7 +56,6 @@ const TopBar = ({
 }) => {
     const dispatch = useDispatch();
     let metaCount = 0;
-    let features;
     const filterInputRef = React.useRef(null);
     const scrollFilterToEndRef = React.useRef(false);
     const [hoveredPieIndex, setHoveredPieIndex] = React.useState(null);
@@ -73,14 +65,7 @@ const TopBar = ({
     let displayTagHelpState = useSelector((state) => getTagsDisplayButtonState(state));
     let displayMetadataState = useSelector((state) => getMetadataDisplayButtonState(state));
     let filterVal = useSelector((state) => getLastEnteredSearchValue(state));
-    let allFeatures = useSelector((state) => getAllFeatures(state));
-    let failedFeatures = useSelector((state) => getAllFailedFeatures(state));
-    let passedFeatures = useSelector((state) => getAllPassedFeatures(state));
-    let skippedFeatures = useSelector((state) => getAllSkippedFeatures(state));
-    let matchedFeatures_ALL = useSelector((state) => getAllMatchingFeatureIds(state));
-    let matchedFeatures_PASSED = useSelector((state) => getPassedMatchingFeatureIds(state));
-    let matchedFeatures_FAILED = useSelector((state) => getFailedMatchingFeatureIds(state));
-    let matchedFeatures_SKIPPED = useSelector((state) => getSkippedMatchingFeatureIds(state));
+    const features = useSelector(getVisibleFeatures);
     let showExtraSteps = useSelector((state) => getBoiler(state));
     let themeName = useSelector((state) => getTheme(state));
     let settings = useSelector((state) => getSettings(state));
@@ -93,23 +78,6 @@ const TopBar = ({
     let numSkippedScenarios = useSelector((state) =>
         getTotalNumberOfSkippedScenarios(state)
     );
-
-    switch (displayFeaturesToggleState) {
-        case FeaturesToggleValuesEnum.ALL:
-            filterVal ? features = matchedFeatures_ALL : features = allFeatures
-            break;
-        case FeaturesToggleValuesEnum.FAILED:
-            filterVal ? features = matchedFeatures_FAILED : features = failedFeatures
-            break;
-        case FeaturesToggleValuesEnum.PASSED:
-            filterVal ? features = matchedFeatures_PASSED : features = passedFeatures
-            break;
-        case FeaturesToggleValuesEnum.SKIPPED:
-            filterVal ? features = matchedFeatures_SKIPPED : features = skippedFeatures
-            break;
-        default:
-            break;
-    }
 
     let numCurrentFeatures = features.length;
     let featureIdArr = features.map((f) => f.id);  //list of feature ids

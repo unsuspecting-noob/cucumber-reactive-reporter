@@ -12,57 +12,17 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import {
-    FeaturesToggleValuesEnum,
-    getFeaturesToggleValue,
-    getLastEnteredSearchValue,
     getPaginatorInfo,
     paginatorChange
 } from "../store/uistates";
-import {
-    getAllFailedFeatures,
-    getAllFeatures,
-    getAllMatchingFeatureIds,
-    getAllPassedFeatures,
-    getAllSkippedFeatures,
-    getFailedMatchingFeatureIds,
-    getPassedMatchingFeatureIds,
-    getSkippedMatchingFeatureIds
-} from "../store/features";
+import { getVisibleFeatures } from "../store/reportSelectors.mjs";
 import CustomPagination from "./CustomPagination";
 
 const FEATURES_PER_PAGE = [50, 100, 30, 10];
 
 const FeaturesPaginationBar = () => {
     const dispatch = useDispatch();
-    let features;
-    let displayFeaturesToggleState = useSelector((state) => getFeaturesToggleValue(state));
-    let filterVal = useSelector((state) => getLastEnteredSearchValue(state));
-    let allFeatures = useSelector((state) => getAllFeatures(state));
-    let failedFeatures = useSelector((state) => getAllFailedFeatures(state));
-    let passedFeatures = useSelector((state) => getAllPassedFeatures(state));
-    let skippedFeatures = useSelector((state) => getAllSkippedFeatures(state));
-    let matchedFeatures_ALL = useSelector((state) => getAllMatchingFeatureIds(state));
-    let matchedFeatures_PASSED = useSelector((state) => getPassedMatchingFeatureIds(state));
-    let matchedFeatures_FAILED = useSelector((state) => getFailedMatchingFeatureIds(state));
-    let matchedFeatures_SKIPPED = useSelector((state) => getSkippedMatchingFeatureIds(state));
-
-    switch (displayFeaturesToggleState) {
-        case FeaturesToggleValuesEnum.ALL:
-            filterVal ? features = matchedFeatures_ALL : features = allFeatures;
-            break;
-        case FeaturesToggleValuesEnum.FAILED:
-            filterVal ? features = matchedFeatures_FAILED : features = failedFeatures;
-            break;
-        case FeaturesToggleValuesEnum.PASSED:
-            filterVal ? features = matchedFeatures_PASSED : features = passedFeatures;
-            break;
-        case FeaturesToggleValuesEnum.SKIPPED:
-            filterVal ? features = matchedFeatures_SKIPPED : features = skippedFeatures;
-            break;
-        default:
-            features = allFeatures;
-            break;
-    }
+    const features = useSelector(getVisibleFeatures);
 
     const fakeprops = {
         id: "feature_paginator"
