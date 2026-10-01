@@ -10,10 +10,14 @@ to check in new sample to have it show up in github, check everything in /test f
 
 publish notes:
 
-npm login
+npm login --registry=https://registry.npmjs.org/
 npm run generatedist
 npm version patch/minor/major
-npm publish 
+npm publish
+git push --follow-tags
+
+npm publish always targets registry.npmjs.org via publishConfig in package.json, but npm login uses
+whatever registry is configured, so pass --registry when your default registry is a corporate mirror.
 
 clean up any dev files from dist:
 careful when publishing dist, it can have debug json files left from /public folder that can be used during development

@@ -12,6 +12,9 @@
     "dist/package.json"
   ],
   "repository": "github.com:unsuspecting-noob/cucumber-reactive-reporter.git",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "engines": {
     "node": ">=22"
   },
