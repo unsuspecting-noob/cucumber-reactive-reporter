@@ -4,20 +4,9 @@ Node baseline is 22+.
 
 npm run start - runs local dev version for react development, this relies on Public folder to have _cucumber-results.json and _reporter_settings.json files to load the page.
 
-to generate _cucumber-results.json, place cucumber-results.json with cucumberjs output into public folder, then run "npm run testinstall" that will put the output into /test folder.
+public/cucumber-results.json (raw cucumberjs output, gitignored) is the source of the sample report:
+- "npm run updatedocs" regenerates the GitHub Pages sample in /docs from it. /docs keeps a magic file called ".nojekyll", its purpose is to tell github not to flatten docs structure.
+- "npm run testinstall" generates it with the built dist/ into /sample, as a smoke test of the package.
 
-to check in new sample to have it show up in github, check everything in /test folder into /docs. There is a magic file called ".nojekyll", its purpose is to tell github not to flatten docs structure.
-
-publish notes:
-
-npm login --registry=https://registry.npmjs.org/
-npm run generatedist
-npm version patch/minor/major
-npm publish
-git push --follow-tags
-
-npm publish always targets registry.npmjs.org via publishConfig in package.json, but npm login uses
-whatever registry is configured, so pass --registry when your default registry is a corporate mirror.
-
-clean up any dev files from dist:
-careful when publishing dist, it can have debug json files left from /public folder that can be used during development
+releasing (npm publish, sample report, rollback): see RELEASING.md.
+npm publish checks that no sample json from /public made it into dist/ (checkDist.mjs).

@@ -2,11 +2,6 @@
   "files": {
     "main.css": "./static/css/main.css",
     "main.js": "./static/js/main.js",
-    "static/media/fontawesome-webfont.svg?v=4.7.0": "./static/media/fontawesome-webfont.svg",
-    "static/media/fontawesome-webfont.eot": "./static/media/fontawesome-webfont.eot",
-    "static/media/fontawesome-webfont.ttf?v=4.7.0": "./static/media/fontawesome-webfont.ttf",
-    "static/media/fontawesome-webfont.woff?v=4.7.0": "./static/media/fontawesome-webfont.woff",
-    "static/media/fontawesome-webfont.woff2?v=4.7.0": "./static/media/fontawesome-webfont.woff2",
     "static/media/roboto-all-500-normal.woff": "./static/media/roboto-all-500-normal.woff",
     "static/media/roboto-all-700-normal.woff": "./static/media/roboto-all-700-normal.woff",
     "static/media/roboto-all-400-normal.woff": "./static/media/roboto-all-400-normal.woff",

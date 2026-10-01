@@ -35,14 +35,15 @@
     "pregeneratedist": "rm -rf dist",
     "generatedist": "npm run buildreact && node prepDist.mjs",
     "postgeneratedist": "node install.mjs",
-    "pretestinstall": "rm -rf test",
-    "testinstall": "node devtest.mjs && touch test/.nojekyll",
+    "pretestinstall": "rm -rf sample",
+    "testinstall": "node devtest.mjs",
     "updatedocs": "node updateSampleReport.mjs",
     "test": "react-scripts test",
     "test:node": "node --test test/*.test.mjs",
     "eject": "react-scripts eject",
     "checkdeps": "node checkDeps.mjs",
-    "prepublishOnly": "node checkDeps.mjs && npm run generatedist"
+    "checkdist": "node checkDist.mjs",
+    "prepublishOnly": "node checkDeps.mjs && npm run generatedist && node checkDist.mjs"
   },
   "dependencies": {},
   "devDependencies": {

@@ -1,7 +1,11 @@
 import { execSync } from "child_process";
-import { cpSync, rmSync, mkdirSync, readdirSync, copyFileSync, existsSync, statSync } from "fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "fs";
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
+
+import Reporter from "./index.mjs";
+import { SAMPLE_SOURCE, sampleReportOptions } from "./sampleReportOptions.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,7 +13,10 @@ const __dirname = path.dirname(__filename);
 const BUILD = path.join(__dirname, "build");
 const REACT = path.join(__dirname, "react");
 const DOCS = path.join(__dirname, "docs");
-const PUBLIC = path.join(__dirname, "public");
+const SAMPLE = path.join(__dirname, SAMPLE_SOURCE);
+
+// docs/ entries GitHub Pages needs that the generated report does not produce
+const DOCS_KEEP = new Set([".nojekyll", "CNAME"]);
 
 function log(msg) {
   console.log(`[updatedocs] ${msg}`);
@@ -21,32 +28,13 @@ function cleanDir(dir) {
   }
 }
 
-function syncDir(src, dest) {
-  if (!existsSync(src)) return;
-  if (existsSync(dest)) {
-    rmSync(dest, { recursive: true, force: true });
-  }
-  mkdirSync(dest, { recursive: true });
-  const files = readdirSync(src);
-  for (const file of files) {
-    copyFileSync(path.join(src, file), path.join(dest, file));
-  }
-}
-
-function copyIfNewer(src, dest) {
-  if (!existsSync(src)) {
-    return false;
-  }
-  const srcMtime = statSync(src).mtimeMs;
-  const destMtime = existsSync(dest) ? statSync(dest).mtimeMs : 0;
-  if (srcMtime > destMtime) {
-    copyFileSync(src, dest);
-    return true;
-  }
-  return false;
-}
-
 try {
+  if (!existsSync(SAMPLE)) {
+    throw new Error(
+      `${SAMPLE_SOURCE} not found. It is the raw cucumber JSON the sample report is generated from (gitignored, so it only exists locally).`
+    );
+  }
+
   // 1. Clean build and react directories
   log("Cleaning build/ and react/...");
   cleanDir(BUILD);
@@ -68,35 +56,38 @@ try {
   log("Stripping content hashes (prepDist.mjs)...");
   execSync("node prepDist.mjs", { cwd: __dirname, stdio: "inherit" });
 
-  // 5. Sync to docs/
-  log("Syncing react/ → docs/...");
+  // 5. Generate the sample report with the current generator, so the report data and the
+  //    reporterVersion stamped into _reporter_settings.json match this build
+  log(`Generating the sample report from ${SAMPLE_SOURCE}...`);
+  const generated = mkdtempSync(path.join(os.tmpdir(), "reporter-sample-"));
+  await Reporter.generate(SAMPLE, generated, sampleReportOptions);
 
-  // Copy top-level files
-  copyFileSync(path.join(REACT, "index.html"), path.join(DOCS, "index.html"));
-  copyFileSync(path.join(REACT, "asset-manifest.json"), path.join(DOCS, "asset-manifest.json"));
+  // 6. Replace docs/ with the generated report, so files the build no longer produces
+  //    (removed fonts, old chunks) do not linger
+  log("Replacing docs/ with the generated report...");
+  mkdirSync(DOCS, { recursive: true });
+  for (const entry of readdirSync(DOCS)) {
+    if (!DOCS_KEEP.has(entry)) {
+      rmSync(path.join(DOCS, entry), { recursive: true, force: true });
+    }
+  }
+  cpSync(generated, DOCS, {
+    recursive: true,
+    filter: (src) => path.basename(src) !== ".DS_Store"
+  });
+  rmSync(generated, { recursive: true, force: true });
 
-  // Sync static/js and static/css (clear old, copy new)
-  syncDir(path.join(REACT, "static", "js"), path.join(DOCS, "static", "js"));
-  syncDir(path.join(REACT, "static", "css"), path.join(DOCS, "static", "css"));
-
-  // 6. Copy sample data if source is newer
-  const sampleSrc = path.join(PUBLIC, "_cucumber-results.json");
-  const sampleDest = path.join(DOCS, "_cucumber-results.json");
-  if (copyIfNewer(sampleSrc, sampleDest)) {
-    log("Copying updated _cucumber-results.json to docs/...");
-  } else {
-    log("_cucumber-results.json in docs/ is up to date.");
+  // 7. Check the result
+  const { version } = JSON.parse(readFileSync(path.join(__dirname, "package.json"), "utf8"));
+  const settings = JSON.parse(readFileSync(path.join(DOCS, "_reporter_settings.json"), "utf8"));
+  if (settings.reporterVersion !== version) {
+    throw new Error(`docs/_reporter_settings.json has reporterVersion ${settings.reporterVersion}, expected ${version}`);
+  }
+  if (readFileSync(path.join(DOCS, "index.html"), "utf8").includes("-=title=-")) {
+    throw new Error("docs/index.html still has the -=title=- placeholder");
   }
 
-  const settingsSrc = path.join(PUBLIC, "_reporter_settings.json");
-  const settingsDest = path.join(DOCS, "_reporter_settings.json");
-  if (copyIfNewer(settingsSrc, settingsDest)) {
-    log("Copying updated _reporter_settings.json to docs/...");
-  } else {
-    log("_reporter_settings.json in docs/ is up to date.");
-  }
-
-  log("Done! docs/ has been updated.");
+  log(`Done! docs/ now holds the ${version} sample report.`);
 } catch (err) {
   console.error("[updatedocs] Failed:", err.message);
   process.exit(1);
